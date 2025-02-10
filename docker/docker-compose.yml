@@ -1,0 +1,39 @@
+services:
+  app:
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    image: am/bpoe-api-ocr:latest
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/
+    env_file:
+      - .env
+    networks:
+      - minionetwork
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ../src:/src
+
+  minio:
+    image: minio/minio:latest
+    ports:
+#      - '9000:9000'
+      - '127.0.0.1:9001:9001'  # WebUI MinIO
+    networks:
+      - minionetwork
+    volumes:
+      - '../temp/minio_data:/data'
+    env_file:
+      - .env
+    command: server /data --console-address ":9001"
+
+networks:
+  minionetwork:
+    driver: bridge
+
+volumes:
+  minio_data:
+    driver: local

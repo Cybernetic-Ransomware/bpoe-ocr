@@ -21,9 +21,10 @@ The purpose of this project is to build an OCR microservice.
       git clone https://github.com/Cybernetic-Ransomware/bpoe-ocr.git
       ```
 2. Set .env file based on the template.
-3. Run using Docker:
+3. Create a directory: `/temp/minio_data`
+4. Run using Docker:
       ```powershell
-      docker-compose -f ./docker/docker-compose.yml up --build
+      docker compose -f .\docker\docker-compose.yml up --build
       ```
 ### Dev-instance   
 1. Clone the repository:
