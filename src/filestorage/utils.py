@@ -7,6 +7,9 @@ from src.filestorage.exceptions import MinIOConnectorError
 
 
 class S3ImageUploader(S3ConnectorContextManager):
+    def __init__(self, access_key: str, secret_key: str):
+        super().__init__(access_key, secret_key)
+
     def upload_file(self, file_obj: BinaryIO, file_name: str):
         try:
             self.client.upload_fileobj(file_obj, self.bucket_name, file_name)
@@ -18,6 +21,9 @@ class S3ImageUploader(S3ConnectorContextManager):
 
 
 class S3ImageReader(S3ConnectorContextManager):
+    def __init__(self, access_key: str, secret_key: str):
+        super().__init__(access_key, secret_key)
+
     def download_file(self, file_name: str):
         try:
             response = self.client.get_object(self.bucket_name, file_name)
