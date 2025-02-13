@@ -2,7 +2,7 @@ import boto3
 import botocore.exceptions
 
 from src.config import MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_ENDPOINT, MINIO_BUCKET_NAME
-from src.filestorage.exceptions import MinIOConnectorError
+from core.filestorage.exceptions import MinIOConnectorError
 
 
 class S3ConnectorContextManager:

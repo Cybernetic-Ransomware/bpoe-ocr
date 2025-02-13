@@ -2,8 +2,8 @@ import botocore.exceptions
 from fastapi.responses import StreamingResponse
 from typing import BinaryIO
 
-from src.filestorage.connector import S3ConnectorContextManager
-from src.filestorage.exceptions import MinIOConnectorError
+from core.filestorage.connector import S3ConnectorContextManager
+from core.filestorage.exceptions import MinIOConnectorError
 
 
 class S3ImageUploader(S3ConnectorContextManager):
