@@ -55,6 +55,12 @@ uv sync
 uv run pytest
 ```
 
+#### Quick MiniIO Instance:
+```powershell
+docker run -p 9000:9000 -p 9001:9001 \
+quay.io/minio/minio server /data --console-address ":9001"
+```
+
 #### Ruff
 - Ruff is included for linting. Run the tool with the command: `uvx ruff check`
 
