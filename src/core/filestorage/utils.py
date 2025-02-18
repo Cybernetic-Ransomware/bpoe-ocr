@@ -2,6 +2,7 @@ import botocore.exceptions
 from fastapi.responses import StreamingResponse
 from typing import BinaryIO
 
+from api.exceptions import FileTransferInterrupted, FileBlobHasNoExtension
 from src.core.filestorage.connector import S3ConnectorContextManager
 from src.core.filestorage.exceptions import MinIOConnectorError
 
@@ -11,6 +12,8 @@ class S3ImageUploader(S3ConnectorContextManager):
         super().__init__(access_key, secret_key)
 
     def upload_file(self, file_obj: BinaryIO, file_name: str):
+        if not "." in file_name:
+            raise FileBlobHasNoExtension()
         try:
             self.client.upload_fileobj(file_obj, self.bucket_name, file_name)
             return True
@@ -26,7 +29,7 @@ class S3ImageReader(S3ConnectorContextManager):
 
     def download_file(self, file_name: str):
         try:
-            response = self.client.get_object(self.bucket_name, file_name)
+            response = self.client.get_object(Bucket=self.bucket_name, Key=file_name)
             return StreamingResponse(
                 response["Body"],
                 media_type="application/octet-stream",
