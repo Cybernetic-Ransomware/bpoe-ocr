@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File
 
 from src.config import MINIO_READER_ACCESS_KEY, MINIO_WRITER_ACCESS_KEY
 from src.api.exceptions import EndpointUnexpectedException, FileTransferInterrupted
-from core.filestorage.utils import S3ImageUploader, S3ImageReader
+from src.core.filestorage.utils import S3ImageUploader, S3ImageReader
 
 
 router = APIRouter()

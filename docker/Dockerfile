@@ -25,4 +25,4 @@ COPY ./src .
 EXPOSE 8080/tcp
 
 CMD ["tail", "-f", "/dev/null"]
-#CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+#CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
