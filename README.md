@@ -60,6 +60,7 @@ uv run pytest
 docker run -p 9000:9000 -p 9001:9001 \
 quay.io/minio/minio server /data --console-address ":9001"
 ```
+- mounted by default on WSL, e.g. `docker-desktop ` -> `/var/lib/docker/volumes/minio_minio_data/_data`
 
 #### Ruff
 - Ruff is included for linting. Run the tool with the command: `uvx ruff check`
