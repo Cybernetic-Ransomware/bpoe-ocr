@@ -6,11 +6,11 @@ from src.core.filestorage.exceptions import MinIOConnectorError
 
 
 class S3ConnectorContextManager:
-    def __init__(self, access_key: str = MINIO_ACCESS_KEY, secret_key: str = MINIO_SECRET_KEY):
+    def __init__(self, access_key: str = MINIO_ACCESS_KEY, secret_key: str = MINIO_SECRET_KEY, bucket_name:str = MINIO_BUCKET_NAME):
         self.endpoint_url  = MINIO_ENDPOINT
         self.access_key = access_key
         self.secret_key = secret_key
-        self.bucket_name = MINIO_BUCKET_NAME
+        self.bucket_name = bucket_name
 
     def __enter__(self):
         try:

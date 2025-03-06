@@ -1,8 +1,11 @@
 import botocore.exceptions
+import cv2
+import numpy as np
+
 from fastapi.responses import StreamingResponse
 from typing import BinaryIO
 
-from api.exceptions import FileTransferInterrupted, FileBlobHasNoExtension
+from src.api.exceptions import FileBlobHasNoExtension
 from src.core.filestorage.connector import S3ConnectorContextManager
 from src.core.filestorage.exceptions import MinIOConnectorError
 
@@ -38,6 +41,45 @@ class S3ImageReader(S3ConnectorContextManager):
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchKey":
                 raise MinIOConnectorError(code=404, message=f"File not found: {file_name}")
+            raise MinIOConnectorError(code=500, message=f"MinIO error: {str(e)}")
+        except Exception as e:
+            raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}")
+
+    def get_image_as_numpy(self, file_name: str) -> np.ndarray:
+        try:
+            response = self.client.get_object(Bucket=self.bucket_name, Key=file_name)
+            image_bytes = response["Body"].read()
+
+            image_array = np.asarray(bytearray(image_bytes), dtype=np.uint8)
+            image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+
+            if image is None:
+                raise MinIOConnectorError(code=404, message=f"File not found: {file_name}")
+
+            return image
+
+        except botocore.exceptions.ClientError as e:
+            if e.response["Error"]["Code"] == "NoSuchKey":
+                raise MinIOConnectorError(code=404, message=f"File not found: {file_name}")
+            raise MinIOConnectorError(code=500, message=f"MinIO error: {str(e)}")
+        except Exception as e:
+            raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}")
+
+    def list_images(self) -> list[str]:
+        try:
+            response = self.client.list_objects_v2(Bucket=self.bucket_name)
+            if "Contents" not in response:
+                return []
+
+            image_extensions = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff"}
+            image_files = [
+                obj["Key"] for obj in response["Contents"]
+                if any(obj["Key"].lower().endswith(ext) for ext in image_extensions)
+            ]
+
+            return image_files
+
+        except botocore.exceptions.ClientError as e:
             raise MinIOConnectorError(code=500, message=f"MinIO error: {str(e)}")
         except Exception as e:
             raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}")
