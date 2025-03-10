@@ -18,10 +18,15 @@ class S3ImageUploader(S3ConnectorContextManager):
         if not "." in file_name:
             raise FileBlobHasNoExtension()
         try:
-            self.client.upload_fileobj(file_obj, self.bucket_name, file_name)
-            return True
+            self.client.head_object(Bucket=self.bucket_name, Key=file_name)
+            raise MinIOConnectorError(code=409, message="File already exists in bucket")
         except botocore.exceptions.ClientError as e:
-            raise MinIOConnectorError(code=500, message=f"Cannot upload file: {e}")
+            if e.response["Error"]["Code"] == "404":
+                try:
+                    self.client.upload_fileobj(file_obj, self.bucket_name, file_name)
+                    return True
+                except botocore.exceptions.ClientError as e:
+                    raise MinIOConnectorError(code=500, message=f"Cannot upload file: {e}")
         except Exception as e:
             raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}")
 

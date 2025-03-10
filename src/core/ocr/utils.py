@@ -9,12 +9,15 @@ from src.core.filestorage.utils import S3ImageReader
 
 
 class OCRReader:
-    def __int__(self):
+    def __init__(self):
         self.reader = S3ImageReader(MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY)
         self.files_queue = []
 
     def read_queue_in_bucket(self) -> None:
         list_of_files = self.reader.list_images()
+
+        if not list_of_files:
+            return None
 
         for file in list_of_files:
             if file not in self.files_queue:
@@ -38,18 +41,24 @@ class OCRReader:
         return rotated_image
 
 
-    def ocr_rotated_by_cv2(self, image) -> dict[str, str]:
+    def ocr_rotated_by_cv2(self, image) -> dict[str, list]:
         osd_data = pytesseract.image_to_osd(image, output_type=pytesseract.Output.DICT)
         rotation_angle = osd_data.get("rotate", 0)
-        image_rotated = self.rotate_image_cv2(image, rotation_angle) if rotation_angle else image
+
+        image_rotated = image
+        if rotation_angle:
+            image_rotated = self.rotate_image_cv2(image, rotation_angle) if rotation_angle else image
 
         result = pytesseract.image_to_data(image_rotated, config=r'--psm 4', output_type=pytesseract.Output.DICT)
         return result
 
-    def ocr_rotated_by_scipy(self, image) -> dict[str, str]:
+    def ocr_rotated_by_scipy(self, image) -> dict[str, list]:
         osd_data = pytesseract.image_to_osd(image, output_type=pytesseract.Output.DICT)
         rotation_angle = osd_data.get("rotate", 0)
-        image_rotated = self.rotate_image_scipy(image, rotation_angle) if rotation_angle else image
+
+        image_rotated = image
+        if rotation_angle:
+            image_rotated = self.rotate_image_scipy(image, rotation_angle) if rotation_angle else image
 
         result = pytesseract.image_to_data(image_rotated, config=r'--psm 4', output_type=pytesseract.Output.DICT)
         return result
