@@ -2,8 +2,8 @@ import httpx
 
 from fastapi import APIRouter, UploadFile, File
 
-from src.config import MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY, MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY
-from src.api.exceptions import EndpointUnexpectedException, FileTransferInterrupted
+from src.config import DEBUG, MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY, MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY
+from src.api.exceptions import EndpointUnexpectedException, FileTransferInterrupted, EndpointNotAllowed
 from src.core.filestorage.utils import S3ImageUploader, S3ImageReader
 from src.core.ocr.utils import PytesseractReader
 
@@ -40,6 +40,14 @@ def delete_file(file_name: str) -> None:
 
 @router.get("/download/{file_name}")
 async def download_file(file_name: str):
+    """
+    Downloads a file from the storage. This endpoint is intended for testing purposes only.
+
+    :param file_name: str, unique file name (UUID) that exists in the bucket
+    :return: file content or appropriate error message if the file cannot be found
+    """
+    if not DEBUG:
+        raise EndpointNotAllowed()
     try:
         with S3ImageReader(MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY) as bucket_connector:
             return bucket_connector.download_file(file_name=file_name)
@@ -50,15 +58,12 @@ async def download_file(file_name: str):
 @router.post("/process_ocr/")
 async def process_ocr_task(file_name: str, ocr_engine: callable = PytesseractReader) -> dict[str, dict[str]]:
     """
-    Otrzymuję nazwę pliku od kolejki Rabbita,
-    Pobieram plik z Bucketa COnnectorem Boto
-    Uruchamiam OCRa,
-    Usuwam plik z Bucketa
-    Wysyłam na GateWay wynik OCRa wraz z kluczem w postaci nazwy pliku.
+    Processes the OCR task by fetching the image from the storage, applying OCR,
+    and returning the extracted text. The file is deleted from the storage after processing.
 
-    :param file_name: str, unique file name (UUID) existed in the bucket
-    :param ocr_engine: starting with tesseract
-    :return: file: ocr result for APIGateway
+    :param file_name: str, unique file name (UUID) that exists in the bucket
+    :param ocr_engine: callable, the OCR engine to use (default is PytesseractReader
+    :return: dict[str, dict[str]], OCR result with the file name as the key and extracted text as the value
     """
     try:
         ocred_text = ocr_engine.ocr_file(file_name)

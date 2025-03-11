@@ -12,3 +12,7 @@ class FileTransferInterrupted(HTTPException):
 class FileBlobHasNoExtension(HTTPException):
     def __init__(self):
         super().__init__(status_code=415, detail="File name was provided without an extension")
+
+class EndpointNotAllowed(HTTPException):
+    def __init__(self):
+        super().__init__(status_code=403, detail="Endpoint not allowed in current deployment")
