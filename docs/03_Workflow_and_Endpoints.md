@@ -3,12 +3,12 @@
 
 ## Context
 
-In this microservices ecosystem, we need to process OCR tasks from images uploaded by users. The images are uploaded via a frontend that sends them to an API Gateway. The OCR process involves the following components:
+In this microservices ecosystem, It is needed to process OCR tasks from images uploaded by users. The images are uploaded via a frontend that sends them to an API Gateway. The OCR process involves the following components:
 
 - A WebSocket-based communication for real-time updates between the frontend and the backend.
 - A RabbitMQ queue that handles OCR tasks.
-- An OCR worker that processes the images using OCR technology.
-- AWS S3 or a compatible local solution (like MinIO) for image storage.
+- An OCR worker that processes the images using OCR technology (OCR python libraries, Tesseract, LLM or others) Modular build to compare and choose one.
+- AWS S3 or a compatible local solution (MinIO) for image storage.
 - A database to store the processed results and any user edits.
 
 This architecture requires efficient and reliable communication between these components to ensure the correct handling of images and data, as well as a robust flow for processing, confirming, and saving OCR results.
@@ -71,7 +71,7 @@ The flow of data is streamlined by having a single connection_id serve as a key 
 
 ### Flexibility in Storage
 
-By adopting an S3-compatible solution (such as MinIO locally for development and AWS S3 in production), we ensure that the storage solution is consistent and flexible, providing both local and cloud-based storage options.
+By adopting an S3-compatible solution (such as MinIO locally for development and AWS S3 in production), is ensured that the storage solution is consistent and flexible, providing both local and cloud-based storage options.
 
 ### Future Scalability
 
@@ -80,16 +80,16 @@ The architecture supports scalability by allowing multiple OCR workers to proces
 ## Consequences
 ### Positive Outcomes
 
-Separation of Concerns: The decoupling of components (frontend, API gateway, OCR worker, etc.) allows each part of the system to scale independently and be maintained separately.
-Real-Time User Feedback: Using WebSockets provides real-time updates, making the user experience smoother.
-Scalability: The system can easily scale by adding more OCR workers as needed.
-Flexible Storage Options: The ability to switch between AWS S3 and MinIO for local development ensures that the architecture is adaptable to different environments.
+- Separation of Concerns: The decoupling of components (frontend, API gateway, OCR worker, etc.) allows each part of the system to scale independently and be maintained separately. 
+- Real-Time User Feedback: Using WebSockets provides real-time updates, making the user experience smoother. 
+- Scalability: The system can easily scale by adding more OCR workers as needed. 
+- Flexible Storage Options: The ability to switch between AWS S3 and MinIO for local development ensures that the architecture is adaptable to different environments.
 
 ### Challenges & Mitigation
 
-Storage Inconsistencies: The use of local MinIO for development may introduce inconsistencies with AWS S3 in production. This can be mitigated through thorough integration testing to ensure parity between environments.
-OCR Accuracy: OCR accuracy may vary based on image quality and processing capacity. Continuous testing and potentially using multiple OCR engines can mitigate this.
-Message Queue Overload: If the queue becomes overloaded, it could lead to delays in processing. This can be mitigated by implementing rate limiting or back-pressure handling in the RabbitMQ consumer logic.
+- Storage Inconsistencies: The use of local MinIO for development may introduce inconsistencies with AWS S3 in production. This can be mitigated through thorough integration testing to ensure parity between environments. 
+- OCR Accuracy: OCR accuracy may vary based on image quality and processing capacity. Continuous testing and potentially using multiple OCR engines can mitigate this. 
+- Message Queue Overload: If the queue becomes overloaded, it could lead to delays in processing. This can be mitigated by implementing rate limiting or back-pressure handling in the RabbitMQ consumer logic.
 
 ## Status
 
