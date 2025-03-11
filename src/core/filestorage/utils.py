@@ -33,6 +33,14 @@ class S3ImageUploader(S3ConnectorContextManager):
         except Exception as e:
             raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}")
 
+    def delete_object(self, file_name: str) -> None:
+        try:
+            self.client.delete_object(Bucket=self.bucket_name, key=file_name)
+        except botocore.exceptions.ClientError as e:
+            raise MinIOConnectorError(code=500, message=f"MinIO error: {str(e)}")
+        except Exception as e:
+            raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}")
+
 
 class S3ImageReader(S3ConnectorContextManager):
     def __init__(self, access_key: str, secret_key: str) -> None:

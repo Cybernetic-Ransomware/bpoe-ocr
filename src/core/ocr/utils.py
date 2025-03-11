@@ -6,23 +6,12 @@ from scipy import ndimage
 
 from src.config import MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY
 from src.core.filestorage.utils import S3ImageReader
+from src.core.ocr.exceptions import FileNotFoundInBucket
 
 
-class OCRReader:
+class PytesseractReader:
     def __init__(self):
         self.reader = S3ImageReader(MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY)
-        self.files_queue = []
-
-    def read_queue_in_bucket(self) -> None:
-        list_of_files = self.reader.list_images()
-
-        if not list_of_files:
-            return None
-
-        for file in list_of_files:
-            if file not in self.files_queue:
-                self.files_queue.append(file)
-
 
     @staticmethod
     def rotate_image_cv2(image: np.ndarray, angle: float) -> np.ndarray:
@@ -36,7 +25,7 @@ class OCRReader:
 
     @staticmethod
     def rotate_image_scipy(image: np.ndarray, angle: float) -> np.ndarray:
-        rotated_image = ndimage.rotate(image, angle=angle, reshape=False)
+        rotated_image = ndimage.rotate(image, angle=angle, reshape=True)
 
         return rotated_image
 
@@ -62,3 +51,16 @@ class OCRReader:
 
         result = pytesseract.image_to_data(image_rotated, config=r'--psm 4', output_type=pytesseract.Output.DICT)
         return result
+
+    def ocr_file(self, file_name: str) -> dict[str, list]:
+        with self.reader as bucket_connector:
+            if file_name not in bucket_connector:
+                raise FileNotFoundInBucket(message=f'File: {file_name}')
+            file_blop = bucket_connector.get_image_as_numpy(file_name=file_name)
+
+        ocr_text = dict()
+        if file_blop:
+            ocr_text = self.ocr_rotated_by_cv2(file_blop)
+
+        return ocr_text
+
