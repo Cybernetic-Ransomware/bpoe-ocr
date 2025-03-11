@@ -6,15 +6,18 @@ from fastapi.responses import StreamingResponse
 from typing import BinaryIO
 
 from src.api.exceptions import FileBlobHasNoExtension
-from src.core.filestorage.connector import S3ConnectorContextManager
-from src.core.filestorage.exceptions import MinIOConnectorError
+from src.core.filestorage.abc_connector import S3ConnectorContextManager
+from src.core.filestorage.exceptions import MinIOConnectorError, ConnectorMethodNotAllowed
 
 
 class S3ImageUploader(S3ConnectorContextManager):
     def __init__(self, access_key: str, secret_key: str):
         super().__init__(access_key, secret_key)
 
-    def upload_file(self, file_obj: BinaryIO, file_name: str):
+    def download_file(self, **kwargs):
+        raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
+
+    def upload_file(self, file_obj: BinaryIO, file_name: str) -> True:
         if not "." in file_name:
             raise FileBlobHasNoExtension()
         try:
@@ -32,7 +35,7 @@ class S3ImageUploader(S3ConnectorContextManager):
 
 
 class S3ImageReader(S3ConnectorContextManager):
-    def __init__(self, access_key: str, secret_key: str):
+    def __init__(self, access_key: str, secret_key: str) -> None:
         super().__init__(access_key, secret_key)
 
     def download_file(self, file_name: str):
@@ -49,6 +52,9 @@ class S3ImageReader(S3ConnectorContextManager):
             raise MinIOConnectorError(code=500, message=f"MinIO error: {str(e)}")
         except Exception as e:
             raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}")
+
+    def upload_file(self, **kwargs):
+        raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
 
     def get_image_as_numpy(self, file_name: str) -> np.ndarray:
         try:

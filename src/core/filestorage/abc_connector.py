@@ -1,16 +1,27 @@
 import boto3
 import botocore.exceptions
 
+from abc import ABC, abstractmethod
+from typing import BinaryIO
+
 from src.config import MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_ENDPOINT, MINIO_BUCKET_NAME
 from src.core.filestorage.exceptions import MinIOConnectorError
 
 
-class S3ConnectorContextManager:
+class S3ConnectorContextManager(ABC):
     def __init__(self, access_key: str = MINIO_ACCESS_KEY, secret_key: str = MINIO_SECRET_KEY, bucket_name:str = MINIO_BUCKET_NAME):
         self.endpoint_url  = MINIO_ENDPOINT
         self.access_key = access_key
         self.secret_key = secret_key
         self.bucket_name = bucket_name
+
+    @abstractmethod
+    def download_file(self, file_name: str) -> None:
+        pass
+
+    @abstractmethod
+    def upload_file(self, file_obj: BinaryIO, file_name: str) -> True:
+        pass
 
     def __enter__(self):
         try:
