@@ -1,8 +1,7 @@
-import httpx
-
 from fastapi import APIRouter, UploadFile, File
 
-from src.config import DEBUG, MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY, MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY
+from src.config import (DEBUG, MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY,
+                        MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY)
 from src.api.exceptions import EndpointUnexpectedException, FileTransferInterrupted, EndpointNotAllowed
 from src.core.filestorage.utils import S3ImageUploader, S3ImageReader
 from src.core.ocr.utils import PytesseractReader
@@ -14,7 +13,7 @@ async def healthcheck():
     return {"status": "OK"}
 
 @router.post("/upload/{file_name}")
-async def upload_file(file_name: str, file: UploadFile = File(...)) -> dict[str, str]:
+async def upload_file(file_name: str, file: UploadFile = None) -> dict[str, str]:
     """
     API Gateway uploads an image directly to S3/MiniIO.
 
@@ -22,6 +21,9 @@ async def upload_file(file_name: str, file: UploadFile = File(...)) -> dict[str,
     :param file: UploadFile, binary image blob received from frontend.
     :return: dict[str, str], confirmation message.
     """
+    if file is None:
+        file = File(...)
+
     try:
         with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as bucket_connector:
             success = bucket_connector.upload_file(file_obj=file.file, file_name=file_name)
@@ -29,14 +31,14 @@ async def upload_file(file_name: str, file: UploadFile = File(...)) -> dict[str,
                 return {"message": f"File '{file_name}' uploaded successfully"}
             raise FileTransferInterrupted()
     except Exception as e:
-        raise EndpointUnexpectedException(str(e))
+        raise EndpointUnexpectedException(str(e)) from e
 
 def delete_file(file_name: str) -> None:
     try:
         with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as bucket_connector:
             bucket_connector.delete_object(file_name)
     except Exception as e:
-        raise EndpointUnexpectedException(str(e))
+        raise EndpointUnexpectedException(str(e)) from e
 
 @router.get("/download/{file_name}")
 async def download_file(file_name: str):
@@ -52,7 +54,7 @@ async def download_file(file_name: str):
         with S3ImageReader(MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY) as bucket_connector:
             return bucket_connector.download_file(file_name=file_name)
     except Exception as e:
-        raise EndpointUnexpectedException(str(e))
+        raise EndpointUnexpectedException(str(e)) from e
 
 
 @router.post("/process_ocr/")
@@ -70,4 +72,4 @@ async def process_ocr_task(file_name: str, ocr_engine: callable = PytesseractRea
         delete_file(file_name)
         return {file_name: ocred_text}
     except Exception as e:
-        raise EndpointUnexpectedException(str(e))
+        raise EndpointUnexpectedException(str(e)) from e

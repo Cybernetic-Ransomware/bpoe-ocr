@@ -19,7 +19,8 @@ class PytesseractReader:
         center = (w/2, h/2)
 
         rotation_matrix = cv2.getRotationMatrix2D(center, -angle, 1.0)
-        rotated_image = cv2.warpAffine(image, rotation_matrix, (w, h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+        rotated_image = cv2.warpAffine(image, rotation_matrix, (w, h),
+                                       flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
 
         return rotated_image
 

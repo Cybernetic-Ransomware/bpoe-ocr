@@ -18,7 +18,7 @@ class S3ImageUploader(S3ConnectorContextManager):
         raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
 
     def upload_file(self, file_obj: BinaryIO, file_name: str) -> True:
-        if not "." in file_name:
+        if "." not in file_name:
             raise FileBlobHasNoExtension()
         try:
             self.client.head_object(Bucket=self.bucket_name, Key=file_name)
@@ -29,17 +29,17 @@ class S3ImageUploader(S3ConnectorContextManager):
                     self.client.upload_fileobj(file_obj, self.bucket_name, file_name)
                     return True
                 except botocore.exceptions.ClientError as e:
-                    raise MinIOConnectorError(code=500, message=f"Cannot upload file: {e}")
+                    raise MinIOConnectorError(code=500, message=f"Cannot upload file: {e}") from e
         except Exception as e:
-            raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}")
+            raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}") from e
 
     def delete_object(self, file_name: str) -> None:
         try:
             self.client.delete_object(Bucket=self.bucket_name, key=file_name)
         except botocore.exceptions.ClientError as e:
-            raise MinIOConnectorError(code=500, message=f"MinIO error: {str(e)}")
+            raise MinIOConnectorError(code=500, message=f"MinIO error: {str(e)}") from e
         except Exception as e:
-            raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}")
+            raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}") from e
 
 
 class S3ImageReader(S3ConnectorContextManager):
@@ -56,10 +56,10 @@ class S3ImageReader(S3ConnectorContextManager):
             )
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchKey":
-                raise MinIOConnectorError(code=404, message=f"File not found: {file_name}")
-            raise MinIOConnectorError(code=500, message=f"MinIO error: {str(e)}")
+                raise MinIOConnectorError(code=404, message=f"File not found: {file_name}") from e
+            raise MinIOConnectorError(code=500, message=f"MinIO error: {str(e)}") from e
         except Exception as e:
-            raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}")
+            raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}") from e
 
     def upload_file(self, **kwargs):
         raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
@@ -79,10 +79,10 @@ class S3ImageReader(S3ConnectorContextManager):
 
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchKey":
-                raise MinIOConnectorError(code=404, message=f"File not found: {file_name}")
-            raise MinIOConnectorError(code=500, message=f"MinIO error: {str(e)}")
+                raise MinIOConnectorError(code=404, message=f"File not found: {file_name}") from e
+            raise MinIOConnectorError(code=500, message=f"MinIO error: {str(e)}") from e
         except Exception as e:
-            raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}")
+            raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}") from e
 
     def list_images(self) -> list[str]:
         try:
@@ -99,6 +99,6 @@ class S3ImageReader(S3ConnectorContextManager):
             return image_files
 
         except botocore.exceptions.ClientError as e:
-            raise MinIOConnectorError(code=500, message=f"MinIO error: {str(e)}")
+            raise MinIOConnectorError(code=500, message=f"MinIO error: {str(e)}") from e
         except Exception as e:
-            raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}")
+            raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}") from e
