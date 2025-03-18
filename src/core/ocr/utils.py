@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import pytesseract
-
 from scipy import ndimage
 
 from src.config import MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY

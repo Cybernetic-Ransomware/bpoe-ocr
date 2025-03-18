@@ -44,7 +44,7 @@ docstring-code-format = true
 docstring-code-line-length = 124
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "B", "SIM"]
+select = ["E", "F", "UP", "B", "SIM", "I"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["F401", "F841"]

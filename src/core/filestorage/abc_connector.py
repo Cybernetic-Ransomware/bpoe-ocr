@@ -1,10 +1,10 @@
-import boto3
-import botocore.exceptions
-
 from abc import ABC, abstractmethod
 from typing import BinaryIO
 
-from src.config import MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_ENDPOINT, MINIO_BUCKET_NAME
+import boto3
+import botocore.exceptions
+
+from src.config import MINIO_ACCESS_KEY, MINIO_BUCKET_NAME, MINIO_ENDPOINT, MINIO_SECRET_KEY
 from src.core.filestorage.exceptions import MinIOConnectorError
 
 

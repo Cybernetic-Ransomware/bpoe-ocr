@@ -1,9 +1,14 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, File, UploadFile
 
-from src.config import (DEBUG, MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY,
-                        MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY)
-from src.api.exceptions import EndpointUnexpectedException, FileTransferInterrupted, EndpointNotAllowed
-from src.core.filestorage.utils import S3ImageUploader, S3ImageReader
+from src.api.exceptions import EndpointNotAllowed, EndpointUnexpectedException, FileTransferInterrupted
+from src.config import (
+    DEBUG,
+    MINIO_READER_ACCESS_KEY,
+    MINIO_READER_SECRET_KEY,
+    MINIO_WRITER_ACCESS_KEY,
+    MINIO_WRITER_SECRET_KEY,
+)
+from src.core.filestorage.utils import S3ImageReader, S3ImageUploader
 from src.core.ocr.utils import PytesseractReader
 
 router = APIRouter()

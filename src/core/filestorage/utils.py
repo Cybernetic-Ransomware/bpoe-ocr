@@ -1,13 +1,13 @@
+from typing import BinaryIO
+
 import botocore.exceptions
 import cv2
 import numpy as np
-
 from fastapi.responses import StreamingResponse
-from typing import BinaryIO
 
 from src.api.exceptions import FileBlobHasNoExtension
 from src.core.filestorage.abc_connector import S3ConnectorContextManager
-from src.core.filestorage.exceptions import MinIOConnectorError, ConnectorMethodNotAllowed
+from src.core.filestorage.exceptions import ConnectorMethodNotAllowed, MinIOConnectorError
 
 
 class S3ImageUploader(S3ConnectorContextManager):

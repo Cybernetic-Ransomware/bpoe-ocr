@@ -1,6 +1,7 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 import botocore.exceptions
+import pytest
 
 from src.core.filestorage.abc_connector import S3ConnectorContextManager
 from src.core.filestorage.exceptions import MinIOConnectorError
