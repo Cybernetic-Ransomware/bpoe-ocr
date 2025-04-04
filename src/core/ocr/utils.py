@@ -54,13 +54,12 @@ class PytesseractReader:
 
     def ocr_file(self, file_name: str) -> dict[str, list]:
         with self.reader as bucket_connector:
-            if file_name not in bucket_connector:
-                raise FileNotFoundInBucket(message=f'File: {file_name}')
             file_blop = bucket_connector.get_image_as_numpy(file_name=file_name)
+            if not np.any(file_blop):
+                raise FileNotFoundInBucket(message=f'File: {file_name}')
 
         ocr_text = dict()
-        if file_blop:
-            ocr_text = self.ocr_rotated_by_cv2(file_blop)
+        ocr_text = self.ocr_rotated_by_cv2(file_blop)
 
         return ocr_text
 

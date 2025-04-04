@@ -8,6 +8,7 @@ from src.api.exceptions import (
     FileTransferInterrupted,
     UnsupportedOCREngine,
 )
+from src.conf_logger import setup_logger
 from src.config import (
     DEBUG,
     MINIO_READER_ACCESS_KEY,
@@ -17,6 +18,9 @@ from src.config import (
 )
 from src.core.filestorage.utils import S3ImageReader, S3ImageUploader
 from src.core.ocr.utils import PytesseractReader
+
+logger = setup_logger(__name__, "api")
+
 
 router = APIRouter()
 
@@ -89,6 +93,7 @@ async def process_ocr_task(file_name: str, ocr_engine: str = 'pytesseract') -> d
             raise UnsupportedOCREngine(message=ocr_engine)
 
         ocred_text = engine.ocr_file(file_name)
+        logger.info(f"OCR result: {ocred_text} --- for file {file_name}")
         delete_file(file_name)
         return {file_name: ocred_text}
     except Exception as e:
