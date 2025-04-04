@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, File, UploadFile
 
 from src.api.exceptions import EndpointNotAllowed, EndpointUnexpectedException, FileTransferInterrupted
@@ -18,7 +20,7 @@ async def healthcheck():
     return {"status": "OK"}
 
 @router.post("/upload/{file_name}")
-async def upload_file(file_name: str, file: UploadFile = None) -> dict[str, str]:
+async def upload_file(file_name: str, file: UploadFile | None = None) -> dict[str, str]:
     """
     API Gateway uploads an image directly to S3/MiniIO.
 
@@ -63,7 +65,7 @@ async def download_file(file_name: str):
 
 
 @router.post("/process_ocr/")
-async def process_ocr_task(file_name: str, ocr_engine: callable = PytesseractReader) -> dict[str, dict[str]]:
+async def process_ocr_task(file_name: str, ocr_engine: PytesseractReader = PytesseractReader) -> dict[str, dict[str, Any]]:  #type: ignore[assignment]
     """
     Processes the OCR task by fetching the image from the storage, applying OCR,
     and returning the extracted text. The file is deleted from the storage after processing.

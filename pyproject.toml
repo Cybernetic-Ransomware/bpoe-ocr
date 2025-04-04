@@ -1,7 +1,7 @@
 [project]
-name = "fastapiproject"
+name = "bpoe-ocr"
 version = "0.1.0"
-description = "Add your description here"
+description = "Placeholder"
 requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.36.17",
@@ -18,10 +18,12 @@ dependencies = [
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
+    "mypy>=1.15.0",
+    "pre-commit>=4.2.0",
     "pytest>=8.3.4",
     "pytest-asyncio>=0.25.3",
     "pytest-cov>=6.0.0",
-    "ruff>=0.9.5",
+    "ruff>=0.10.0",
 ]
 [tool.pytest]
 pythonpath = "./src"
@@ -52,3 +54,12 @@ select = ["E", "F", "UP", "B", "SIM", "I"]
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["fastapi.Depends", "fastapi.params.Depends", "fastapi.Query", "fastapi.params.Query"]
+
+[tool.mypy]
+files = ["src"]
+exclude = ["tests/", "migrations/", "src/db/models.py"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "src.db.models"
+disable_error_code = ["call-arg"]

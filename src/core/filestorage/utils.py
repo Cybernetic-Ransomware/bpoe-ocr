@@ -17,7 +17,7 @@ class S3ImageUploader(S3ConnectorContextManager):
     def download_file(self, **kwargs):
         raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
 
-    def upload_file(self, file_obj: BinaryIO, file_name: str) -> True:
+    def upload_file(self, file_obj: BinaryIO, file_name: str) -> bool:
         if "." not in file_name:
             raise FileBlobHasNoExtension()
         try:
@@ -32,6 +32,7 @@ class S3ImageUploader(S3ConnectorContextManager):
                     raise MinIOConnectorError(code=500, message=f"Cannot upload file: {e}") from e
         except Exception as e:
             raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}") from e
+        return False
 
     def delete_object(self, file_name: str) -> None:
         try:

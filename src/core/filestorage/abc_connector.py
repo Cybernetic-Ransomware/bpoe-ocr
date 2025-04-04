@@ -23,7 +23,7 @@ class S3ConnectorContextManager(ABC):
         pass
 
     @abstractmethod
-    def upload_file(self, file_obj: BinaryIO, file_name: str) -> True:
+    def upload_file(self, file_obj: BinaryIO, file_name: str) -> bool:
         pass
 
     def __enter__(self):

@@ -15,7 +15,7 @@ The purpose of this project is to build an OCR microservice.
 - Docker Desktop / Docker + Compose
 
 ## Getting Started (Windows)
-### Deploy 
+### Deploy
 1. Clone the repository:
       ```powershell
       git clone https://github.com/Cybernetic-Ransomware/bpoe-ocr.git
@@ -26,7 +26,7 @@ The purpose of this project is to build an OCR microservice.
       ```powershell
       docker compose -f .\docker\docker-compose.yml up --build
       ```
-### Dev-instance   
+### Dev-instance
 1. Clone the repository:
       ```powershell
       git clone https://github.com/Cybernetic-Ransomware/bpoe-ocr.git
@@ -40,7 +40,13 @@ The purpose of this project is to build an OCR microservice.
       ```powershell
       uv sync
       ```
-5. Run locally:
+5. Install pre-commit hooks:
+      ```powershell
+      uv run pre-commit install
+      uv run pre-commit autoupdate
+      uv run pre-commit run --all-files
+      ```
+6. Run the application locally:
       ```powershell
       uv run uvicorn src.main:app --host 0.0.0.0 --port 8080 --reload
       ```
@@ -51,8 +57,28 @@ The purpose of this project is to build an OCR microservice.
 
 #### Pytest
 ```powershell
-uv sync
+uv sync --extra dev
 uv run pytest
+```
+
+#### Ruff
+```powershell
+uv sync --extra dev
+uv run ruff check
+```
+or as a standalone tool:
+```powershell
+uvx ruff check
+```
+
+#### Mypy
+```powershell
+uv sync --extra dev
+uv run mypy .\src\
+```
+or as a standalone tool:
+```powershell
+uvx mypy .\src\
 ```
 
 #### Quick MiniIO Instance:
@@ -61,9 +87,6 @@ docker run -p 9000:9000 -p 9001:9001 \
 quay.io/minio/minio server /data --console-address ":9001"
 ```
 - mounted by default on WSL, e.g. `docker-desktop ` -> `/var/lib/docker/volumes/minio_minio_data/_data`
-
-#### Ruff
-- Ruff is included for linting. Run the tool with the command: `uvx ruff check`
 
 
 ## Useful links and documentation
