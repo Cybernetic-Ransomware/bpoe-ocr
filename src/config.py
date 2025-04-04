@@ -1,3 +1,5 @@
+from logging import INFO
+
 from decouple import config
 
 config.search_path = "./docker"
@@ -13,5 +15,8 @@ MINIO_WRITER_SECRET_KEY=config("MINIO_WRITER_SECRET_KEY")
 MINIO_READER_SECRET_KEY=config("MINIO_READER_SECRET_KEY")
 
 DEBUG=False
+LOGGER_LEVEL= INFO
+
 if config("DEBUG"):
     DEBUG=config("DEBUG")
+    LOGGER_LEVEL=10
