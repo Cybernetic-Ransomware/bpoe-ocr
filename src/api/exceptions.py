@@ -16,3 +16,7 @@ class FileBlobHasNoExtension(HTTPException):
 class EndpointNotAllowed(HTTPException):
     def __init__(self):
         super().__init__(status_code=403, detail="Endpoint not allowed in current deployment")
+
+class UnsupportedOCREngine(HTTPException):
+    def __init__(self, code: int = 404, message: str = ''):
+        super().__init__(status_code=code, detail=f"Unsupported OCR engine: {message}")

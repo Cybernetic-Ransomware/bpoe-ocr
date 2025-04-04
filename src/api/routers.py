@@ -2,7 +2,12 @@ from typing import Any
 
 from fastapi import APIRouter, File, UploadFile
 
-from src.api.exceptions import EndpointNotAllowed, EndpointUnexpectedException, FileTransferInterrupted
+from src.api.exceptions import (
+    EndpointNotAllowed,
+    EndpointUnexpectedException,
+    FileTransferInterrupted,
+    UnsupportedOCREngine,
+)
 from src.config import (
     DEBUG,
     MINIO_READER_ACCESS_KEY,
@@ -14,6 +19,10 @@ from src.core.filestorage.utils import S3ImageReader, S3ImageUploader
 from src.core.ocr.utils import PytesseractReader
 
 router = APIRouter()
+
+ocr_engines = {
+    'pytesseract': PytesseractReader(),
+}
 
 @router.get("/", include_in_schema=False)
 async def healthcheck():
@@ -64,19 +73,24 @@ async def download_file(file_name: str):
         raise EndpointUnexpectedException(str(e)) from e
 
 
-@router.post("/process_ocr/")
-async def process_ocr_task(file_name: str, ocr_engine: PytesseractReader = PytesseractReader) -> dict[str, dict[str, Any]]:  #type: ignore[assignment]
+@router.post("/process_ocr/", response_model=dict[str, dict[str, Any]])
+async def process_ocr_task(file_name: str, ocr_engine: str = 'pytesseract') -> dict[str, dict[str, Any]]:  #type: ignore[assignment]
     """
     Processes the OCR task by fetching the image from the storage, applying OCR,
     and returning the extracted text. The file is deleted from the storage after processing.
 
     :param file_name: str, unique file name (UUID) that exists in the bucket
-    :param ocr_engine: callable, the OCR engine to use (default is PytesseractReader
+    :param ocr_engine: str, the OCR engine to use (default is PytesseractReader)
     :return: dict[str, dict[str]], OCR result with the file name as the key and extracted text as the value
     """
     try:
-        ocred_text = ocr_engine.ocr_file(file_name)
+        engine = ocr_engines.get(ocr_engine)
+        if not engine:
+            raise UnsupportedOCREngine(message=ocr_engine)
+
+        ocred_text = engine.ocr_file(file_name)
         delete_file(file_name)
         return {file_name: ocred_text}
     except Exception as e:
         raise EndpointUnexpectedException(str(e)) from e
+
