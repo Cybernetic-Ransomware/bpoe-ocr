@@ -92,3 +92,4 @@ quay.io/minio/minio server /data --console-address ":9001"
 ## Useful links and documentation
 - Boto3 examples: [Amazon doc](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-examples.html)
 - MiniIO docker image: [DockerHub](https://hub.docker.com/r/minio/minio)
+- AsyncBoto3 for further refactorings: [PyPi](https://pypi.org/project/aioboto3/)
