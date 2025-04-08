@@ -56,7 +56,7 @@ async def upload_file(file_name: str, file: UploadFile | None = None) -> dict[st
 def delete_file(file_name: str) -> None:
     try:
         with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as bucket_connector:
-            bucket_connector.delete_object(file_name)
+            bucket_connector.delete_file(file_name)
     except Exception as e:
         raise EndpointUnexpectedException(str(e)) from e
 
@@ -93,7 +93,7 @@ async def process_ocr_task(file_name: str, ocr_engine: str = 'pytesseract') -> d
             raise UnsupportedOCREngine(message=ocr_engine)
 
         ocred_text = engine.ocr_file(file_name)
-        logger.info(f"OCR result: {ocred_text} --- for file {file_name}")
+        logger.info(f"OCR result: {str(ocred_text)} --- for file {file_name}")
         delete_file(file_name)
         return {file_name: ocred_text}
     except Exception as e:
