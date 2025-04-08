@@ -13,6 +13,7 @@ def setup_logger(name: str, file: str, level: int = LOGGER_LEVEL) -> logging.Log
 
     if not logger.handlers:
         file_handler = logging.FileHandler(log_dir / f"{file}.log", mode='a')
+        file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 
         console_handler = logging.StreamHandler()
