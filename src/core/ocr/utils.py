@@ -37,6 +37,7 @@ class PytesseractReader:
                 raise FileNotFoundInBucket(message=f'File: {file_name}')
 
         rotated_image = self.ocr_rotated_by_pillow(file_blop, file_name=file_name)
-        ocr_text = pytesseract.image_to_data(rotated_image, config=r'--psm 4', output_type=pytesseract.Output.DICT)
+        ocr_text = pytesseract.image_to_data(rotated_image, config=r'--psm 4', lang='pol',
+                                             output_type=pytesseract.Output.DICT)
 
         return ocr_text
