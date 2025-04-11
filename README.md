@@ -24,7 +24,7 @@ The purpose of this project is to build an OCR microservice.
 3. Create a directory: `/temp/minio_data`
 4. Run using Docker:
       ```powershell
-      docker compose -f .\docker\docker-compose.yml up --build
+      docker-compose -f .\docker\docker-compose.yml up --build -d
       ```
 ### Dev-instance
 1. Clone the repository:
