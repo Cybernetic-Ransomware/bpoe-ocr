@@ -70,7 +70,7 @@ echo "Waiting 15 seconds for router and replica sets..."
 sleep 15
 
 echo "Adding Shards to the Cluster via Router..."
-mongosh --host mongo-rounter-1:27017 --quiet <<EOF
+mongosh --host mongo-router-1:27017 --quiet <<EOF
 var status = sh.status();
 var shard1Exists = false;
 var shard2Exists = false;
@@ -97,15 +97,15 @@ EOF
 if [ $? -ne 0 ]; then echo "ERROR: Adding shards failed."; exit 1; fi
 
 echo "Cluster Status:"
-mongosh --host mongo-rounter-1:27017 --quiet --eval 'sh.status()'
+mongosh --host mongo-router-1:27017 --quiet --eval 'sh.status()'
 
 # Optional section to enable sharding for a specific DB/Collection
 # echo "Enabling sharding for database 'mydatabase'..."
-# mongosh --host mongo-rounter-1:27017 --quiet --eval 'sh.enableSharding("mydatabase")'
+# mongosh --host mongo-router-1:27017 --quiet --eval 'sh.enableSharding("mydatabase")'
 # if [ $? -ne 0 ]; then echo "ERROR: Enabling sharding for mydatabase failed."; exit 1; fi
 #
 # echo "Sharding collection 'mydatabase.mycollection'..."
-# mongosh --host mongo-rounter-1:27017 --quiet <<EOF
+# mongosh --host mongo-router-1:27017 --quiet <<EOF
 #   db.getSiblingDB("mydatabase").createCollection("mycollection")
 #   sh.shardCollection("mydatabase.mycollection", { "_id": "hashed" } )
 # EOF

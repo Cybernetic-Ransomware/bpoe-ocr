@@ -7,7 +7,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/
-      - MONGODB_URI=mongodb://mongo-rounter-1:27017/
+      - MONGODB_URI=mongodb://mongo-router-1:27017/
     env_file:
       - .env
     networks:
@@ -16,7 +16,7 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-      mongo-rounter-1:
+      mongo-router-1:
         condition: service_started
       mongo-setup:
         condition: service_completed_successfully
@@ -54,7 +54,7 @@ services:
       - mongo-configsv-3
       - mongo-shrd-01
       - mongo-shrd-02
-      - mongo-rounter-1
+      - mongo-router-1
     volumes:
       - ./mongo-init.sh:/scripts/mongo-init.sh
     networks:
@@ -62,7 +62,7 @@ services:
     entrypoint: ["/bin/bash", "/scripts/mongo-init.sh"]
     restart: 'no'
 
-  mongo-rounter-1:
+  mongo-router-1:
     image: mongo:8.0.6
     container_name: mongos01
     command: [ "mongos", "--configdb", "csrs/mongo-configsv-1:27019,mongo-configsv-2:27019,mongo-configsv-3:27019", "--bind_ip_all", "--port", "27017" ]
