@@ -17,7 +17,6 @@ RUN apk add --no-cache \
     libavif-dev \
     tiff-dev \
     openjpeg-dev \
-    libwebp-dev \
     openblas-dev \
     gtk+3.0-dev \
     ffmpeg-dev \
@@ -34,7 +33,7 @@ RUN uv sync --no-cache --no-group dev
 
 FROM python:3.12.10-alpine3.21 AS runtime
 LABEL authors="aleksander.marszalki"
-LABEL name="bpoe-api-gateway"
+LABEL name="bpoe-ocr"
 
 RUN apk add --no-cache \
     tesseract-ocr \
@@ -42,13 +41,12 @@ RUN apk add --no-cache \
     tesseract-ocr-data-osd \
     zlib \
     libwebp-tools \
-    libwebp-dev \
+    libwebp \
     libjpeg-turbo \
     libpng \
     libavif \
     tiff \
     openjpeg \
-    libwebp \
     openblas \
     gtk+3.0 \
     ffmpeg \
@@ -66,8 +64,6 @@ COPY --from=builder --chown=appuser:appgroup /src/.venv /src/.venv
 RUN chmod -R +x /src/.venv/bin/
 
 RUN mkdir /log && chown appuser:appgroup /log
-
-RUN ls -la /src && ls -la /src/.venv || echo ".venv nie istnieje"
 
 USER appuser
 
