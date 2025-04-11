@@ -7,13 +7,19 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/
+      - MONGODB_URI=mongodb://mongo-rounter-1:27017/
     env_file:
       - .env
     networks:
       - minionetwork
+      - mongonetwork
     depends_on:
       minio:
         condition: service_healthy
+      mongo-rounter-1:
+        condition: service_started
+      mongo-setup:
+        condition: service_completed_successfully
     restart: unless-stopped
     ports:
       - "127.0.0.1:8080:8080"
@@ -40,6 +46,92 @@ services:
       retries: 5
       start_period: 5s
 
+  mongo-setup:
+    image: mongo:8.0.6
+    depends_on:
+      - mongo-configsv-1
+      - mongo-configsv-2
+      - mongo-configsv-3
+      - mongo-shrd-01
+      - mongo-shrd-02
+      - mongo-rounter-1
+    volumes:
+      - ./mongo-init.sh:/scripts/mongo-init.sh
+    networks:
+      - mongonetwork
+    entrypoint: ["/bin/bash", "/scripts/mongo-init.sh"]
+    restart: 'no'
+
+  mongo-rounter-1:
+    image: mongo:8.0.6
+    container_name: mongos01
+    command: [ "mongos", "--configdb", "csrs/mongo-configsv-1:27019,mongo-configsv-2:27019,mongo-configsv-3:27019", "--bind_ip_all", "--port", "27017" ]
+    networks:
+      - mongonetwork
+    ports:
+      - "127.0.0.1:27017:27017"
+    depends_on:
+      - mongo-configsv-1
+      - mongo-configsv-2
+      - mongo-configsv-3
+      - mongo-shrd-01
+      - mongo-shrd-02
+    restart: unless-stopped
+
+  mongo-shrd-01:
+    image: mongo:8.0.6
+    command: ["mongod", "--shardsvr", "--replSet", "rs-shard01", "--bind_ip_all", "--port", "27018"]
+    networks:
+      - mongonetwork
+    volumes:
+      - mongo-shard01a-data:/data/db
+    restart: unless-stopped
+
+  mongo-shrd-02:
+    image: mongo:8.0.6
+    command: ["mongod", "--shardsvr", "--replSet", "rs-shard02", "--bind_ip_all", "--port", "27018"]
+    networks:
+      - mongonetwork
+    volumes:
+      - mongo-shard02a-data:/data/db
+    restart: unless-stopped
+
+  mongo-configsv-1:
+    image: mongo:8.0.6
+    command: [ "mongod", "--configsvr", "--replSet", "csrs", "--bind_ip_all", "--port", "27019" ]
+    networks:
+      - mongonetwork
+    volumes:
+      - mongo-configsvr01-data:/data/configdb
+    restart: unless-stopped
+
+  mongo-configsv-2:
+    image: mongo:8.0.6
+    command: [ "mongod", "--configsvr", "--replSet", "csrs", "--bind_ip_all", "--port", "27019" ]
+    networks:
+      - mongonetwork
+    volumes:
+      - mongo-configsvr02-data:/data/configdb
+    restart: unless-stopped
+
+  mongo-configsv-3:
+    image: mongo:8.0.6
+    command: [ "mongod", "--configsvr", "--replSet", "csrs", "--bind_ip_all", "--port", "27019" ]
+    networks:
+      - mongonetwork
+    volumes:
+      - mongo-configsvr03-data:/data/configdb
+    restart: unless-stopped
+
 networks:
   minionetwork:
     driver: bridge
+  mongonetwork:
+    driver: bridge
+
+volumes:
+  mongo-configsvr01-data:
+  mongo-configsvr02-data:
+  mongo-configsvr03-data:
+  mongo-shard01a-data:
+  mongo-shard02a-data:
