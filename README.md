@@ -22,7 +22,8 @@ The purpose of this project is to build an OCR microservice.
       ```
 2. Set .env file based on the template.
 3. Create a directory: `/temp/minio_data`
-4. Run using Docker:
+4. Provide access to a MiniO/S3 instance with a bucket and writer/reader users that match the [.env.template](docker/.env.template) file.
+5. Run using Docker:
       ```powershell
       docker-compose -f .\docker\docker-compose.yml up --build -d
       ```

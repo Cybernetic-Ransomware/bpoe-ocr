@@ -10,6 +10,8 @@ RUN apk add --no-cache build-base cmake ninja
 RUN apk add --no-cache \
     nasm \
     zlib-dev \
+    libwebp-tools \
+    libwebp-dev \
     libjpeg-turbo-dev \
     libpng-dev \
     libavif-dev \
@@ -39,6 +41,8 @@ RUN apk add --no-cache \
     tesseract-ocr-data-pol \
     tesseract-ocr-data-osd \
     zlib \
+    libwebp-tools \
+    libwebp-dev \
     libjpeg-turbo \
     libpng \
     libavif \
@@ -53,20 +57,15 @@ RUN apk add --no-cache \
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-ENV PATH="/usr/local/bin:$PATH"
-#ENV PATH="/src/.venv/bin:/usr/local/bin:$PATH"
+ENV PATH="/src/.venv/bin:/usr/local/bin:$PATH"
 
 WORKDIR /src
-
-#COPY --from=builder /usr/local /usr/local
-#COPY --from=builder /src /src
-#COPY --from=builder /src/.venv /src/.venv
-
-#COPY ./src .
 
 COPY --chown=appuser:appgroup ./src .
 COPY --from=builder --chown=appuser:appgroup /src/.venv /src/.venv
 RUN chmod -R +x /src/.venv/bin/
+
+RUN mkdir /log && chown appuser:appgroup /log
 
 RUN ls -la /src && ls -la /src/.venv || echo ".venv nie istnieje"
 
@@ -74,6 +73,4 @@ USER appuser
 
 EXPOSE 8080/tcp
 
-CMD ["tail", "-f", "/dev/null"]
-#CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
-#CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
