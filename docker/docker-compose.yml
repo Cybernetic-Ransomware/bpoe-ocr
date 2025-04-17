@@ -1,3 +1,4 @@
+name: bpoe-minio-ocr-mongo
 services:
   app:
     build:
