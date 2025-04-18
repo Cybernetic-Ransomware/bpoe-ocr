@@ -22,10 +22,7 @@ The purpose of this project is to build an OCR microservice.
       git clone https://github.com/Cybernetic-Ransomware/bpoe-ocr.git
       ```
 2. Set .env file based on the template.
-3. Create a directory: `/temp/minio_data`
-4. Provide access to a MiniO/S3 instance with a bucket and writer/reader users that match the [.env.template](docker/.env.template) file.
-   - *writer* should have both polices: *readwrite* and *writeonly*
-5. Run using Docker:
+3. Run using Docker:
       ```powershell
       docker-compose -f .\docker\docker-compose.yml up --build -d
       ```
@@ -35,21 +32,25 @@ The purpose of this project is to build an OCR microservice.
       git clone https://github.com/Cybernetic-Ransomware/bpoe-ocr.git
       ```
 2. Set .env file based on the template.
-3. Install UV:
+3. Create a directory: `/temp/minio_data`
+4. Provide access to a MiniO/S3 instance with a bucket and writer/reader users that match the [.env.template](docker/.env.template) file.
+   - *writer* should have both polices: *readwrite* and *writeonly*
+5. Provide access to a Mongodb instance that match the [.env.template](docker/.env.template) file.
+6. Install UV:
       ```powershell
       pip install uv
       ```
-4. Install dependencies:
+7. Install dependencies:
       ```powershell
       uv sync
       ```
-5. Install pre-commit hooks:
+8. Install pre-commit hooks:
       ```powershell
       uv run pre-commit install
       uv run pre-commit autoupdate
       uv run pre-commit run --all-files
       ```
-6. Run the application locally:
+9. Run the application locally:
       ```powershell
       uv run uvicorn src.main:app --host 0.0.0.0 --port 8080 --reload
       ```
