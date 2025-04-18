@@ -28,7 +28,7 @@ class MongoConnectorContextManager(ABC):  # noqa B024
 
     def __enter__(self):
         try:
-            self.client = MongoClient(self.mongo_uri)
+            self.client = MongoClient(self.mongo_uri, uuidRepresentation='standard')
             self.database = self.client[self.mongo_db]
             self.client.server_info()
             return self
