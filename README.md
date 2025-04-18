@@ -7,8 +7,9 @@ The purpose of this project is to build an OCR microservice.
 ## Features
 - S3 database integration,
 - basic OCR via open source Python's libraries,
-- modular use to future implementation of AI-based OCR models
-- accessible only via a gateway connection,
+- modular use to future implementation of AI-based OCR models,
+- MongoDB cluster for data persistence,
+- accessible only via a gateway connection.
 
 ## Requirements
 - Python 3.13.2 with UV package manager
@@ -23,6 +24,7 @@ The purpose of this project is to build an OCR microservice.
 2. Set .env file based on the template.
 3. Create a directory: `/temp/minio_data`
 4. Provide access to a MiniO/S3 instance with a bucket and writer/reader users that match the [.env.template](docker/.env.template) file.
+   - *writer* should have both polices: *readwrite* and *writeonly*
 5. Run using Docker:
       ```powershell
       docker-compose -f .\docker\docker-compose.yml up --build -d
@@ -89,9 +91,15 @@ quay.io/minio/minio server /data --console-address ":9001"
 ```
 - mounted by default on WSL, e.g. `docker-desktop ` -> `/var/lib/docker/volumes/minio_minio_data/_data`
 
+#### Database Access:
+To connect to the MongoDB cluster with MongoDB Compass:
+1. Open MongoDB Compass
+2. Use the connection string, by default: `mongodb://localhost:27017/`
+3. Click "Connect"
 
 ## Useful links and documentation
 - Boto3 examples: [Amazon doc](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-examples.html)
 - MiniIO docker image: [DockerHub](https://hub.docker.com/r/minio/minio)
 - AsyncBoto3 for further refactorings: [PyPi](https://pypi.org/project/aioboto3/)
-- Pyteseract configs: [pyimagesearch](https://pyimagesearch.com/2021/11/15/tesseract-page-segmentation-modes-psms-explained-how-to-improve-your-ocr-accuracy/)
+- Pytesseract configs: [pyimagesearch](https://pyimagesearch.com/2021/11/15/tesseract-page-segmentation-modes-psms-explained-how-to-improve-your-ocr-accuracy/)
+- Mongo Compass winget command [winget](https://winget.run/pkg/MongoDB/Compass.Full)
