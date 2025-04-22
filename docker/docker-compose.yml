@@ -58,6 +58,8 @@ services:
       - mongo-router-1
     volumes:
       - ./mongo-init.sh:/scripts/mongo-init.sh
+    env_file:
+      - .env
     networks:
       - mongonetwork
     entrypoint: ["/bin/bash", "/scripts/mongo-init.sh"]

@@ -88,10 +88,13 @@ class MongoConnectorBuilder(MongoConnectorContextManager):
                     logger.info(
                         f"Successfully created collection '{self.mongo_collection}' in database '{self.mongo_db}' "
                         f"with schema validation.")
+                    self.enable_sharding()
+
                 except CollectionInvalid as e:
                     logger.warning(
                         f"Collection '{self.mongo_collection}' already exists in database '{self.mongo_db}'. "
                         f"Skipping creation. Error: {e}")
+                    self.enable_sharding()
                     pass
                 except Exception as e:
                     logger.error(
@@ -99,6 +102,19 @@ class MongoConnectorBuilder(MongoConnectorContextManager):
                         f"with validation in database '{self.mongo_db}': {e}")
                     raise MongoDBConnectorError(
                         message=f"Failed to create collection '{self.mongo_collection}': {e}") from e
+
+    def enable_sharding(self):
+        shard_key = {"_id": 1}
+        try:
+            existing_shard_key = self.client.admin.command('shardCollection', f"{self.mongo_db}.{self.mongo_collection}")
+            if existing_shard_key:
+                logger.info(f"Collection '{self.mongo_collection}' is already sharded.")
+            else:
+                self.client.admin.command('shardCollection', f"{self.mongo_db}.{self.mongo_collection}", key=shard_key)
+                logger.info(f"Sharding enabled for collection '{self.mongo_collection}' with shard key: {shard_key}.")
+        except Exception as e:
+            logger.error(f"Failed to enable sharding for collection '{self.mongo_collection}': {e}")
+            raise MongoDBConnectorError(message=f"Failed to enable sharding: {e}") from e
 
 
 class MongoConnectorRunner(MongoConnectorContextManager):

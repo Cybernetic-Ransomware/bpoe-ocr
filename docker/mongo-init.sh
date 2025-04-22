@@ -99,16 +99,9 @@ if [ $? -ne 0 ]; then echo "ERROR: Adding shards failed."; exit 1; fi
 echo "Cluster Status:"
 mongosh --host mongo-router-1:27017 --quiet --eval 'sh.status()'
 
-# Optional section to enable sharding for a specific DB/Collection
-# echo "Enabling sharding for database 'mydatabase'..."
-# mongosh --host mongo-router-1:27017 --quiet --eval 'sh.enableSharding("mydatabase")'
-# if [ $? -ne 0 ]; then echo "ERROR: Enabling sharding for mydatabase failed."; exit 1; fi
-#
-# echo "Sharding collection 'mydatabase.mycollection'..."
-# mongosh --host mongo-router-1:27017 --quiet <<EOF
-#   db.getSiblingDB("mydatabase").createCollection("mycollection")
-#   sh.shardCollection("mydatabase.mycollection", { "_id": "hashed" } )
-# EOF
-# if [ $? -ne 0 ]; then echo "ERROR: Sharding mydatabase.mycollection failed."; exit 1; fi
+#Section to enable sharding for a specific DB/Collection
+echo "Enabling sharding for database '$MONGO_DB'..."
+mongosh --host mongo-router-1:27017 --quiet --eval "sh.enableSharding('$MONGO_DB')"
+if [ $? -ne 0 ]; then echo "ERROR: Enabling sharding for $MONGO_DB failed."; exit 1; fi
 
 echo "MongoDB Sharded Cluster initialization script finished."
