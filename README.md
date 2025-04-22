@@ -98,6 +98,28 @@ To connect to the MongoDB cluster with MongoDB Compass:
 2. Use the connection string, by default: `mongodb://localhost:27017/`
 3. Click "Connect"
 
+To verify if sharding is enabled for a collection:
+1. Open the MongoDB Shell in Compass and check the sharding status:
+   ```bash
+   sh.status()
+   ```
+2. Look for information about a sharded collection, for example:
+   ```bash
+   sh.shardCollection("ocr.ocr_images", { _id: 1 })
+   ```
+3. If the collections section is empty, the collection is not sharded yet:
+   ```bash
+   "ocr": {
+   primary: 'rs-shard02',
+   collections: {}
+   }
+   ```
+4. To enable sharding, run the following commands:
+   ```bash
+   sh.enableSharding("ocr")
+   sh.shardCollection("ocr.ocr_images", { _id: 1 })
+   ```
+
 ## Useful links and documentation
 - Boto3 examples: [Amazon doc](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-examples.html)
 - MiniIO docker image: [DockerHub](https://hub.docker.com/r/minio/minio)

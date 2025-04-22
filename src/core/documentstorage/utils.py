@@ -106,8 +106,9 @@ class MongoConnectorBuilder(MongoConnectorContextManager):
     def enable_sharding(self):
         shard_key = {"_id": 1}
         try:
-            existing_shard_key = self.client.admin.command('shardCollection', f"{self.mongo_db}.{self.mongo_collection}")
-            if existing_shard_key:
+            config_db = self.client["config"]
+            existing = config_db["collections"].find_one({"_id": f"{self.mongo_db}.{self.mongo_collection}"})
+            if existing and existing.get("sharded", False):
                 logger.info(f"Collection '{self.mongo_collection}' is already sharded.")
             else:
                 self.client.admin.command('shardCollection', f"{self.mongo_db}.{self.mongo_collection}", key=shard_key)
