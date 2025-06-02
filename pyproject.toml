@@ -19,6 +19,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "dotenv>=0.9.9",
     "httpx>=0.28.1",
     "mypy>=1.15.0",
     "pre-commit>=4.2.0",
@@ -42,6 +43,7 @@ filterwarnings = [
 [tool.ruff]
 extend-exclude = []
 line-length = 124
+exclude = ["tests/*"]
 
 [tool.ruff.format]
 docstring-code-format = true
