@@ -126,3 +126,8 @@ To verify if sharding is enabled for a collection:
 - AsyncBoto3 for further refactorings: [PyPi](https://pypi.org/project/aioboto3/)
 - Pytesseract configs: [pyimagesearch](https://pyimagesearch.com/2021/11/15/tesseract-page-segmentation-modes-psms-explained-how-to-improve-your-ocr-accuracy/)
 - Mongo Compass winget command [winget](https://winget.run/pkg/MongoDB/Compass.Full)
+
+- API Gateway microservice: [GitHub](https://github.com/Cybernetic-Ransomware/bpoe-api-gateway.git)
+- Databases handler microservice: [GitHub](https://github.com/Cybernetic-Ransomware/bpoe_events_db_handler)
+- OCR microservice: [GitHub](https://github.com/Cybernetic-Ransomware/bpoe-ocr)
+- Reports microservice: [GitHub](https://github.com/Cybernetic-Ransomware/bpoe_events_reports)
