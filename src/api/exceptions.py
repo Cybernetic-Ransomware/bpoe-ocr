@@ -1,9 +1,16 @@
 from fastapi import HTTPException
+from pydantic import BaseModel
+
+
+class ErrorResponse(BaseModel):
+    status_code: int
+    error: str
+    detail: str
 
 
 class EndpointUnexpectedException(HTTPException):
-    def __init__(self, message: str= ""):
-        super().__init__(status_code=404, detail=f"Unexpected Endpoint Error: {message}")
+    def __init__(self, message: str = ""):
+        super().__init__(status_code=500, detail=f"Unexpected Endpoint Error: {message}")
 
 class FileTransferInterrupted(HTTPException):
     def __init__(self):

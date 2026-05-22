@@ -2,7 +2,6 @@ from fastapi import APIRouter, File, UploadFile
 
 from src.api.exceptions import (
     EndpointNotAllowed,
-    EndpointUnexpectedException,
     FileTransferInterrupted,
     UnsupportedOCREngine,
 )
@@ -27,9 +26,11 @@ ocr_engines = {
     'pytesseract': PytesseractReader(),
 }
 
+
 @router.get("/", include_in_schema=False)
 async def healthcheck():
     return {"status": "OK"}
+
 
 @router.post("/upload/{file_name}")
 async def upload_file(file_name: str, file: UploadFile | None = None) -> dict[str, str]:
@@ -43,21 +44,17 @@ async def upload_file(file_name: str, file: UploadFile | None = None) -> dict[st
     if file is None:
         file = File(...)
 
-    try:
-        with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as bucket_connector:
-            success = bucket_connector.upload_file(file_obj=file.file, file_name=file_name)
-            if success:
-                return {"message": f"File '{file_name}' uploaded successfully"}
-            raise FileTransferInterrupted()
-    except Exception as e:
-        raise EndpointUnexpectedException(str(e)) from e
+    with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as bucket_connector:
+        success = bucket_connector.upload_file(file_obj=file.file, file_name=file_name)
+        if success:
+            return {"message": f"File '{file_name}' uploaded successfully"}
+        raise FileTransferInterrupted()
+
 
 def delete_file(file_name: str) -> None:
-    try:
-        with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as bucket_connector:
-            bucket_connector.delete_file(file_name)
-    except Exception as e:
-        raise EndpointUnexpectedException(str(e)) from e
+    with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as bucket_connector:
+        bucket_connector.delete_file(file_name)
+
 
 @router.get("/download/{file_name}")
 async def download_file(file_name: str):
@@ -69,11 +66,8 @@ async def download_file(file_name: str):
     """
     if not DEBUG:
         raise EndpointNotAllowed()
-    try:
-        with S3ImageReader(MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY) as bucket_connector:
-            return bucket_connector.download_file(file_name=file_name)
-    except Exception as e:
-        raise EndpointUnexpectedException(str(e)) from e
+    with S3ImageReader(MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY) as bucket_connector:
+        return bucket_connector.download_file(file_name=file_name)
 
 
 @router.post("/process_ocr/", response_model=dict[str, list[str]])
@@ -87,16 +81,13 @@ async def process_ocr_task(file_name: str, user_email: str,
     :param ocr_engine: str, the OCR engine to use (default is PytesseractReader)
     :return: dict[str, list[str]], OCR result with the file name as the key and extracted text as the value
     """
-    try:
-        engine = ocr_engines.get(ocr_engine)
-        if not engine:
-            raise UnsupportedOCREngine(message=ocr_engine)
+    engine = ocr_engines.get(ocr_engine)
+    if not engine:
+        raise UnsupportedOCREngine(message=ocr_engine)
 
-        ocred_text = engine.ocr_file(file_name)
-        logger.info(f"OCR result: {str(ocred_text)} --- for file {file_name}")
-        with MongoConnectorRunner() as mongorunner:
-            mongorunner.upload_ocr_result(file_name, list(str(ocred_text)), user_email)
-        delete_file(file_name)
-        return {file_name: ocred_text.get("text", [])}
-    except Exception as e:
-        raise EndpointUnexpectedException(str(e)) from e
+    ocred_text = engine.ocr_file(file_name)
+    logger.info(f"OCR result: {str(ocred_text)} --- for file {file_name}")
+    with MongoConnectorRunner() as mongorunner:
+        mongorunner.upload_ocr_result(file_name, list(str(ocred_text)), user_email)
+    delete_file(file_name)
+    return {file_name: ocred_text.get("text", [])}
