@@ -19,19 +19,21 @@ class S3HealthChecker(S3ConnectorContextManager):
     def __init__(self, access_key: str, secret_key: str) -> None:
         super().__init__(access_key, secret_key)
 
-    def download_file(self, **kwargs):
+    def download_file(self, file_name: str) -> None:
         raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
 
-    def upload_file(self, **kwargs):
+    def upload_file(self, file_obj: BinaryIO, file_name: str) -> bool:
         raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
 
     def healthcheck(self):
         try:
             self.client.list_buckets()
             return True
-        except (botocore.exceptions.BotoCoreError,
-                botocore.exceptions.NoCredentialsError,
-                botocore.exceptions.EndpointConnectionError) as e:
+        except (
+            botocore.exceptions.BotoCoreError,
+            botocore.exceptions.NoCredentialsError,
+            botocore.exceptions.EndpointConnectionError,
+        ) as e:
             logger.error(f"S3/MiniIO healthcheck failed: {str(e)}")
             return False
 
@@ -40,7 +42,7 @@ class S3ImageUploader(S3ConnectorContextManager):
     def __init__(self, access_key: str, secret_key: str):
         super().__init__(access_key, secret_key)
 
-    def download_file(self, **kwargs):
+    def download_file(self, file_name: str) -> None:
         raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
 
     def upload_file(self, file_obj: BinaryIO, file_name: str) -> bool:
@@ -79,7 +81,7 @@ class S3ImageReader(S3ConnectorContextManager):
             return StreamingResponse(
                 response["Body"],
                 media_type="application/octet-stream",
-                headers={"Content-Disposition": f'attachment; filename="{file_name}"'}
+                headers={"Content-Disposition": f'attachment; filename="{file_name}"'},
             )
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchKey":
@@ -88,7 +90,7 @@ class S3ImageReader(S3ConnectorContextManager):
         except Exception as e:
             raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}") from e
 
-    def upload_file(self, **kwargs):
+    def upload_file(self, file_obj: BinaryIO, file_name: str) -> bool:
         raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
 
     def get_image_as_numpy(self, file_name: str) -> np.ndarray:
@@ -133,7 +135,8 @@ class S3ImageReader(S3ConnectorContextManager):
 
             image_extensions = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff"}
             image_files = [
-                obj["Key"] for obj in response["Contents"]
+                obj["Key"]
+                for obj in response["Contents"]
                 if any(obj["Key"].lower().endswith(ext) for ext in image_extensions)
             ]
 

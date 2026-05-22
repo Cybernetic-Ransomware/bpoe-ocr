@@ -23,7 +23,7 @@ logger = setup_logger(__name__, "api")
 router = APIRouter()
 
 ocr_engines = {
-    'pytesseract': PytesseractReader(),
+    "pytesseract": PytesseractReader(),
 }
 
 
@@ -71,8 +71,7 @@ async def download_file(file_name: str):
 
 
 @router.post("/process_ocr/", response_model=dict[str, list[str]])
-async def process_ocr_task(file_name: str, user_email: str,
-                           ocr_engine: str = 'pytesseract') -> dict[str, list[str]]:  #type: ignore[assignment]
+async def process_ocr_task(file_name: str, user_email: str, ocr_engine: str = "pytesseract") -> dict[str, list[str]]:  # type: ignore[assignment]
     """
     Processes the OCR task by fetching the image from the storage, applying OCR,
     and returning the extracted text. The file is deleted from the storage after processing.

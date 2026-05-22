@@ -26,18 +26,21 @@ class PytesseractReader:
             logger.error(e)
             rotation_angle = 0
         response = self.rotate_image_pil(image, rotation_angle) if rotation_angle else image
-        logger.debug(f"Image: {file_name}, of sizes: {image.size} "
-                     f"{f'was rotated by {rotation_angle}' if rotation_angle else 'Was not rotated'}")
+        logger.debug(
+            f"Image: {file_name}, of sizes: {image.size} "
+            f"{f'was rotated by {rotation_angle}' if rotation_angle else 'Was not rotated'}"
+        )
         return response
 
     def ocr_file(self, file_name: str) -> dict[str, list]:
         with self.reader as bucket_connector:
             file_blop = bucket_connector.get_image_as_pil(file_name=file_name)
             if not np.any(file_blop):
-                raise FileNotFoundInBucket(message=f'File: {file_name}')
+                raise FileNotFoundInBucket(message=f"File: {file_name}")
 
         rotated_image = self.ocr_rotated_by_pillow(file_blop, file_name=file_name)
-        ocr_text = pytesseract.image_to_data(rotated_image, config=r'--psm 4', lang='pol',
-                                             output_type=pytesseract.Output.DICT)
+        ocr_text = pytesseract.image_to_data(
+            rotated_image, config=r"--psm 4", lang="pol", output_type=pytesseract.Output.DICT
+        )
 
         return ocr_text
