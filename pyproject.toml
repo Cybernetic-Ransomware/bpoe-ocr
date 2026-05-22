@@ -42,6 +42,8 @@ filterwarnings = [
     "ignore:module 'sre_constants' is deprecated:DeprecationWarning",
     "ignore::SyntaxWarning",
     "ignore::pydantic.warnings.PydanticDeprecatedSince20",
+    "ignore:'asyncio.*' is deprecated:DeprecationWarning:pytest_asyncio",
+    "ignore:'asyncio.*' is deprecated:DeprecationWarning:fastapi",
 ]
 
 [tool.coverage.run]

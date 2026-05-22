@@ -86,7 +86,7 @@ async def process_ocr_task(file_name: str, user_email: str, ocr_engine: str = "p
 
     ocred_text = engine.ocr_file(file_name)
     logger.info(f"OCR result: {str(ocred_text)} --- for file {file_name}")
-    with MongoConnectorRunner() as mongorunner:
-        mongorunner.upload_ocr_result(file_name, list(str(ocred_text)), user_email)
+    async with MongoConnectorRunner() as mongorunner:
+        await mongorunner.upload_ocr_result(file_name, list(str(ocred_text)), user_email)
     delete_file(file_name)
     return {file_name: ocred_text.get("text", [])}

@@ -1,0 +1,94 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
+from httpx import ASGITransport, AsyncClient
+
+from src.main import app
+
+BASE_URL = "http://test"
+
+
+async def test_root_healthcheck():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+        response = await client.get("/")
+    assert response.status_code == 200
+    assert response.json() == {"status": "OK"}
+
+
+async def test_upload_file_success():
+    mock_uploader = MagicMock()
+    mock_uploader.__enter__ = MagicMock(return_value=mock_uploader)
+    mock_uploader.__exit__ = MagicMock(return_value=False)
+    mock_uploader.upload_file = MagicMock(return_value=True)
+
+    with patch("src.api.routers.S3ImageUploader", return_value=mock_uploader):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+            response = await client.post(
+                "/api/upload/test_file.jpg",
+                files={"file": ("test.jpg", b"fake image data", "image/jpeg")},
+            )
+
+    assert response.status_code == 200
+    assert response.json()["message"] == "File 'test_file.jpg' uploaded successfully"
+
+
+async def test_upload_file_transfer_interrupted():
+    mock_uploader = MagicMock()
+    mock_uploader.__enter__ = MagicMock(return_value=mock_uploader)
+    mock_uploader.__exit__ = MagicMock(return_value=False)
+    mock_uploader.upload_file = MagicMock(return_value=False)
+
+    with patch("src.api.routers.S3ImageUploader", return_value=mock_uploader):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+            response = await client.post(
+                "/api/upload/test_file.jpg",
+                files={"file": ("test.jpg", b"fake image data", "image/jpeg")},
+            )
+
+    assert response.status_code == 500
+    body = response.json()
+    assert body["status_code"] == 500
+    assert body["error"] == "FileTransferInterrupted"
+
+
+async def test_download_not_allowed_in_production():
+    with patch("src.api.routers.DEBUG", False):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+            response = await client.get("/api/download/some_file.jpg")
+
+    assert response.status_code == 403
+    body = response.json()
+    assert body["error"] == "EndpointNotAllowed"
+
+
+async def test_process_ocr_unsupported_engine():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+        response = await client.post(
+            "/api/process_ocr/",
+            params={"file_name": "test.jpg", "user_email": "user@example.com", "ocr_engine": "unknown_engine"},
+        )
+
+    assert response.status_code == 404
+    assert "Unsupported OCR engine" in response.json()["detail"]
+
+
+async def test_process_ocr_success():
+    mock_engine = MagicMock()
+    mock_engine.ocr_file = MagicMock(return_value={"text": ["Hello", "World"]})
+
+    mock_runner = AsyncMock()
+    mock_runner.__aenter__ = AsyncMock(return_value=mock_runner)
+    mock_runner.upload_ocr_result = AsyncMock(return_value="inserted-id")
+
+    with (
+        patch.dict("src.api.routers.ocr_engines", {"pytesseract": mock_engine}),
+        patch("src.api.routers.MongoConnectorRunner", return_value=mock_runner),
+        patch("src.api.routers.delete_file"),
+    ):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+            response = await client.post(
+                "/api/process_ocr/",
+                params={"file_name": "test.jpg", "user_email": "user@example.com"},
+            )
+
+    assert response.status_code == 200
+    assert response.json() == {"test.jpg": ["Hello", "World"]}

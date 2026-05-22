@@ -21,11 +21,10 @@ async def lifespan(app: FastAPI):
         else:
             print("Healthcheck to Bucket has succeeded.", flush=True)
     try:
-        MongoConnectorBuilder()
+        await MongoConnectorBuilder().initialize()
         print("MongoConnectorBuilder init checker succeeded.", flush=True)
     except Exception as e:
         logger.error(f"MongoDB initialization failed: {e}")
         print("No connection to MongoDB!", flush=True)
         logger.info("Started without proper initialization of document storage: MongoDB.")
-    yield  # Separates code before the application starts and after it stops
-    # ___ Any code to clean up resources after the application stops
+    yield

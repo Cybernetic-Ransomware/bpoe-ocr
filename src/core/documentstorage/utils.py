@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Any
 
-from pymongo import MongoClient
+from pymongo import AsyncMongoClient
 from pymongo.errors import CollectionInvalid, ServerSelectionTimeoutError
 
 from src.conf_logger import setup_logger
@@ -24,14 +24,14 @@ class MongoConnectorContextManager(ABC):  # noqa B024
     def __init__(self, mongo_uri: str, mongo_db: str):
         self.mongo_uri = mongo_uri
         self.mongo_db = mongo_db
-        self.client: MongoClient | None = None
+        self.client: AsyncMongoClient | None = None
         self.database: Any = None
 
-    def __enter__(self):
+    async def __aenter__(self):
         try:
-            self.client = MongoClient(self.mongo_uri, uuidRepresentation="standard")
+            self.client = AsyncMongoClient(self.mongo_uri, uuidRepresentation="standard")
             self.database = self.client[self.mongo_db]
-            self.client.server_info()
+            await self.client.server_info()
             return self
 
         except ServerSelectionTimeoutError as e:
@@ -44,16 +44,16 @@ class MongoConnectorContextManager(ABC):  # noqa B024
             message = f"Unexpected Error during mongodb connector instantiation {str(e)}" if DEBUG else "Unexpected Error"
             raise MongoDBConnectorError(message=message) from e
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self.client is not None:
-            self.client.close()
+            await self.client.close()
         self.client = None
 
-    def ensure_non_admin_user(self):
+    async def ensure_non_admin_user(self):
         if self.database is None:
             raise MongoDBConnectorError(message="Database connection not initialized")
         try:
-            result = self.database.command("usersInfo", {"forAllDBs": False})
+            result = await self.database.command("usersInfo", {"forAllDBs": False})
             roles = result.get("users", [])[0].get("roles", [])
 
             forbidden_roles = {"dbAdmin", "userAdmin", "readWriteAnyDatabase", "dbOwner", "root", "clusterAdmin"}
@@ -74,10 +74,13 @@ class MongoConnectorBuilder(MongoConnectorContextManager):
     ):
         super().__init__(mongo_uri, mongo_db)
         self.mongo_collection = mongo_collection
-        with self:
+
+    async def initialize(self):
+        async with self:
             if self.client is None or self.database is None:
                 raise MongoDBConnectorError(message="Database connection not initialized")
-            db_list = self.client.list_database_names()
+
+            db_list = await self.client.list_database_names()
             db_exists = self.mongo_db in db_list
 
             if not db_exists:
@@ -86,21 +89,21 @@ class MongoConnectorBuilder(MongoConnectorContextManager):
                 validator = {"$jsonSchema": schema}
 
                 try:
-                    self.database.create_collection(
+                    await self.database.create_collection(
                         self.mongo_collection, validator=validator, validationLevel="strict", validationAction="error"
                     )
                     logger.info(
                         f"Successfully created collection '{self.mongo_collection}' in database '{self.mongo_db}' "
                         f"with schema validation."
                     )
-                    self.enable_sharding()
+                    await self.enable_sharding()
 
                 except CollectionInvalid as e:
                     logger.warning(
                         f"Collection '{self.mongo_collection}' already exists in database '{self.mongo_db}'. "
                         f"Skipping creation. Error: {e}"
                     )
-                    self.enable_sharding()
+                    await self.enable_sharding()
                 except Exception as e:
                     logger.error(
                         f"Failed to create collection '{self.mongo_collection}' "
@@ -110,17 +113,19 @@ class MongoConnectorBuilder(MongoConnectorContextManager):
                         message=f"Failed to create collection '{self.mongo_collection}': {e}"
                     ) from e
 
-    def enable_sharding(self):
+    async def enable_sharding(self):
         if self.client is None:
             raise MongoDBConnectorError(message="Database connection not initialized")
         shard_key = {"_id": 1}
         try:
             config_db = self.client["config"]
-            existing = config_db["collections"].find_one({"_id": f"{self.mongo_db}.{self.mongo_collection}"})
+            existing = await config_db["collections"].find_one({"_id": f"{self.mongo_db}.{self.mongo_collection}"})
             if existing and existing.get("sharded", False):
                 logger.info(f"Collection '{self.mongo_collection}' is already sharded.")
             else:
-                self.client.admin.command("shardCollection", f"{self.mongo_db}.{self.mongo_collection}", key=shard_key)
+                await self.client.admin.command(
+                    "shardCollection", f"{self.mongo_db}.{self.mongo_collection}", key=shard_key
+                )
                 logger.info(f"Sharding enabled for collection '{self.mongo_collection}' with shard key: {shard_key}.")
         except Exception as e:
             logger.error(f"Failed to enable sharding for collection '{self.mongo_collection}': {e}")
@@ -134,13 +139,13 @@ class MongoConnectorRunner(MongoConnectorContextManager):
         super().__init__(mongo_uri, mongo_db)
         self.mongo_collection = mongo_collection
 
-    def __enter__(self):
-        super().__enter__()
+    async def __aenter__(self):
+        await super().__aenter__()
         if not DEBUG:
-            self.ensure_non_admin_user()
+            await self.ensure_non_admin_user()
         return self
 
-    def upload_ocr_result(self, image_name: str, ocr_result: list[str], user_email: str) -> str:
+    async def upload_ocr_result(self, image_name: str, ocr_result: list[str], user_email: str) -> str:
         if self.database is None:
             raise MongoDBConnectorError(message="Database connection not initialized")
         try:
@@ -148,7 +153,7 @@ class MongoConnectorRunner(MongoConnectorContextManager):
             doc_to_insert = document_data.model_dump(by_alias=True)
 
             collection = self.database[self.mongo_collection]
-            insert_result = collection.insert_one(doc_to_insert)
+            insert_result = await collection.insert_one(doc_to_insert)
             inserted_id = insert_result.inserted_id
 
             logger.info(f"Successfully uploaded OCR result for '{image_name}' with id '{inserted_id}'.")
