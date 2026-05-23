@@ -78,13 +78,7 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.params.Depends", "fastapi.
 exclude = ["tests/*"]
 
 [tool.codespell]
-skip = """
-./.git,
-./.github,
-./tests/.*,
-./log/.*,
-./result/.*
-"""
+skip = "./.git,./.github,./tests,./log,./result"
 builtin = "clear"
 quiet-level = 3
 
