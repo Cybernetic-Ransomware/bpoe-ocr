@@ -11,6 +11,20 @@ from src.core.documentstorage.models import OCRedImageResult
 
 logger = setup_logger(__name__, "documentstorage")
 
+_UNSUPPORTED_MONGO_KEYWORDS = frozenset({"format", "title"})
+
+
+def _strip_unsupported_schema_keywords(node: Any) -> None:
+    """Recursively remove JSON Schema keywords rejected by MongoDB's $jsonSchema validator."""
+    if isinstance(node, dict):
+        for key in _UNSUPPORTED_MONGO_KEYWORDS:
+            node.pop(key, None)
+        for value in node.values():
+            _strip_unsupported_schema_keywords(value)
+    elif isinstance(node, list):
+        for item in node:
+            _strip_unsupported_schema_keywords(item)
+
 
 class MongoConnectorContextManager(ABC):  # noqa B024
     def __new__(cls, *args, **kwargs):
@@ -85,7 +99,7 @@ class MongoConnectorBuilder(MongoConnectorContextManager):
 
             if not db_exists:
                 schema = OCRedImageResult.model_json_schema()
-                schema.pop("title", None)
+                _strip_unsupported_schema_keywords(schema)
                 validator = {"$jsonSchema": schema}
 
                 try:
@@ -150,7 +164,7 @@ class MongoConnectorRunner(MongoConnectorContextManager):
             raise MongoDBConnectorError(message="Database connection not initialized")
         try:
             document_data = OCRedImageResult(user_email=user_email, filename=image_name, ocr_result=ocr_result)
-            doc_to_insert = document_data.model_dump(by_alias=True)
+            doc_to_insert = document_data.model_dump(by_alias=True, mode="json")
 
             collection = self.database[self.mongo_collection]
             insert_result = await collection.insert_one(doc_to_insert)

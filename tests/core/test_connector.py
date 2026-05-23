@@ -12,6 +12,7 @@ class _Connector(S3ConnectorContextManager):
     def upload_file(self, **kwargs): ...
 
 
+@pytest.mark.unit
 def test_s3_connector_success():
     mock_client = MagicMock()
     mock_client.list_buckets.return_value = {"Buckets": []}
@@ -20,6 +21,7 @@ def test_s3_connector_success():
         mock_client.list_buckets.assert_called_once()
 
 
+@pytest.mark.unit
 def test_s3_connector_endpoint_connection_error():
     with (
         patch("boto3.client", side_effect=botocore.exceptions.EndpointConnectionError(endpoint_url="http://minio")),
@@ -32,6 +34,7 @@ def test_s3_connector_endpoint_connection_error():
     assert "MinIO is unavailable" in exc_info.value.detail
 
 
+@pytest.mark.unit
 def test_s3_connector_client_error():
     mock_client = MagicMock()
     mock_client.list_buckets.side_effect = botocore.exceptions.ClientError(
@@ -48,6 +51,7 @@ def test_s3_connector_client_error():
     assert "MinIO error" in exc_info.value.detail
 
 
+@pytest.mark.unit
 def test_s3_connector_exit():
     mock_client = MagicMock()
     mock_client.list_buckets.return_value = {"Buckets": []}

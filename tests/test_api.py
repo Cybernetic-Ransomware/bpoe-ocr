@@ -1,5 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from httpx import ASGITransport, AsyncClient
 
 from src.main import app
@@ -7,6 +8,7 @@ from src.main import app
 BASE_URL = "http://test"
 
 
+@pytest.mark.unit
 async def test_root_healthcheck():
     async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
         response = await client.get("/")
@@ -14,6 +16,7 @@ async def test_root_healthcheck():
     assert response.json() == {"status": "OK"}
 
 
+@pytest.mark.unit
 async def test_upload_file_success():
     mock_uploader = MagicMock()
     mock_uploader.__enter__ = MagicMock(return_value=mock_uploader)
@@ -31,6 +34,7 @@ async def test_upload_file_success():
     assert response.json()["message"] == "File 'test_file.jpg' uploaded successfully"
 
 
+@pytest.mark.unit
 async def test_upload_file_transfer_interrupted():
     mock_uploader = MagicMock()
     mock_uploader.__enter__ = MagicMock(return_value=mock_uploader)
@@ -50,6 +54,7 @@ async def test_upload_file_transfer_interrupted():
     assert body["error"] == "FileTransferInterrupted"
 
 
+@pytest.mark.unit
 async def test_download_not_allowed_in_production():
     with patch("src.api.routers.DEBUG", False):
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
@@ -60,6 +65,7 @@ async def test_download_not_allowed_in_production():
     assert body["error"] == "EndpointNotAllowed"
 
 
+@pytest.mark.unit
 async def test_process_ocr_unsupported_engine():
     async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
         response = await client.post(
@@ -71,6 +77,7 @@ async def test_process_ocr_unsupported_engine():
     assert "Unsupported OCR engine" in response.json()["detail"]
 
 
+@pytest.mark.unit
 async def test_process_ocr_success():
     mock_engine = MagicMock()
     mock_engine.ocr_file = MagicMock(return_value={"text": ["Hello", "World"]})

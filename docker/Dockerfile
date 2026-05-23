@@ -1,59 +1,26 @@
-FROM python:3.12.10-alpine3.21 AS builder
+FROM python:3.14-slim AS builder
 
 WORKDIR /src
 
-RUN echo "http://dl-cdn.alpinelinux.org/alpine/v$(cut -d'.' -f1-2 /etc/alpine-release)/community" >> /etc/apk/repositories && \
-    apk update
-
-RUN apk add --no-cache build-base cmake ninja
-
-RUN apk add --no-cache \
-    nasm \
-    zlib-dev \
-    libwebp-tools \
-    libwebp-dev \
-    libjpeg-turbo-dev \
-    libpng-dev \
-    libavif-dev \
-    tiff-dev \
-    openjpeg-dev \
-    openblas-dev \
-    gtk+3.0-dev \
-    ffmpeg-dev \
-    gstreamer-dev \
-    gst-plugins-base-dev
-
-RUN python -m pip install --upgrade pip --break-system-packages && \
-    pip install uv --break-system-packages
+RUN pip install uv --break-system-packages
 
 COPY ./pyproject.toml ./uv.lock ./
 
+ENV UV_PYTHON_PREFERENCE=only-system
 RUN uv sync --no-cache --no-group dev
 
 
-FROM python:3.12.10-alpine3.21 AS runtime
+FROM python:3.14-slim AS runtime
 LABEL authors="aleksander.marszalki"
 LABEL name="bpoe-ocr"
 
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
-    tesseract-ocr-data-pol \
-    tesseract-ocr-data-osd \
-    zlib \
-    libwebp-tools \
-    libwebp \
-    libjpeg-turbo \
-    libpng \
-    libavif \
-    tiff \
-    openjpeg \
-    openblas \
-    gtk+3.0 \
-    ffmpeg \
-    gstreamer \
-    gst-plugins-base
+    tesseract-ocr-pol \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 
 ENV PATH="/src/.venv/bin:/usr/local/bin:$PATH"
 

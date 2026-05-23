@@ -15,6 +15,7 @@ def _mock_client():
     return client
 
 
+@pytest.mark.unit
 async def test_runner_enters_and_exits():
     mock_client = _mock_client()
     with (
@@ -27,6 +28,7 @@ async def test_runner_enters_and_exits():
         mock_client.close.assert_called_once()
 
 
+@pytest.mark.unit
 async def test_runner_closes_on_exception_inside_block():
     mock_client = _mock_client()
     with (
@@ -40,6 +42,7 @@ async def test_runner_closes_on_exception_inside_block():
     mock_client.close.assert_called_once()
 
 
+@pytest.mark.unit
 async def test_runner_connection_error():
     mock_client = AsyncMock()
     mock_client.server_info = AsyncMock(side_effect=ServerSelectionTimeoutError("timeout"))
@@ -56,6 +59,7 @@ async def test_runner_connection_error():
     assert exc_info.value.status_code == 503
 
 
+@pytest.mark.unit
 async def test_upload_ocr_result_success():
     mock_insert_result = MagicMock(inserted_id="abc123")
     mock_collection = AsyncMock()
@@ -79,6 +83,7 @@ async def test_upload_ocr_result_success():
     assert result == "abc123"
 
 
+@pytest.mark.unit
 async def test_upload_ocr_result_not_initialized():
     mock_client = _mock_client()
     with (
