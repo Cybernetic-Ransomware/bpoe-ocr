@@ -52,7 +52,7 @@ async def test_upload_file_transfer_interrupted():
     assert response.status_code == 500
     body = response.json()
     assert body["status_code"] == 500
-    assert body["error"] == "FileTransferInterrupted"
+    assert body["error"] == "Internal Server Error"
 
 
 @pytest.mark.unit
@@ -63,7 +63,7 @@ async def test_download_not_allowed_in_production():
 
     assert response.status_code == 403
     body = response.json()
-    assert body["error"] == "EndpointNotAllowed"
+    assert body["error"] == "Forbidden"
 
 
 @pytest.mark.unit

@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
@@ -25,7 +27,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
         headers=exc.headers,
         content=ErrorResponse(
             status_code=exc.status_code,
-            error=type(exc).__name__,
+            error=HTTPStatus(exc.status_code).phrase,
             detail=detail,
         ).model_dump(),
     )
