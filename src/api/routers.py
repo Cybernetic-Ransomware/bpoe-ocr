@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, File, UploadFile
 
 from src.api.exceptions import (
@@ -78,9 +80,9 @@ async def process_ocr_task(file_name: str, body: OcrRequest, ocr_engine: str = "
     if not engine:
         raise UnsupportedOCREngine(message=ocr_engine)
 
-    ocred_text = engine.ocr_file(file_name)
+    ocred_text = await asyncio.to_thread(engine.ocr_file, file_name)
     logger.info(f"OCR result: {str(ocred_text)} --- for file {file_name}")
     async with MongoConnectorRunner() as mongorunner:
         await mongorunner.upload_ocr_result(file_name, ocred_text.get("text", []), body.user_email)
-    delete_file(file_name)
+    await asyncio.to_thread(delete_file, file_name)
     return {file_name: ocred_text.get("text", [])}
