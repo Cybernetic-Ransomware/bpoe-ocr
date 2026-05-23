@@ -94,10 +94,10 @@ class MongoConnectorBuilder(MongoConnectorContextManager):
             if self.client is None or self.database is None:
                 raise MongoDBConnectorError(message="Database connection not initialized")
 
-            db_list = await self.client.list_database_names()
-            db_exists = self.mongo_db in db_list
+            collection_list = await self.database.list_collection_names()
+            collection_exists = self.mongo_collection in collection_list
 
-            if not db_exists:
+            if not collection_exists:
                 schema = OCRedImageResult.model_json_schema()
                 _strip_unsupported_schema_keywords(schema)
                 validator = {"$jsonSchema": schema}
@@ -110,14 +110,11 @@ class MongoConnectorBuilder(MongoConnectorContextManager):
                         f"Successfully created collection '{self.mongo_collection}' in database '{self.mongo_db}' "
                         f"with schema validation."
                     )
-                    await self.enable_sharding()
-
                 except CollectionInvalid as e:
                     logger.warning(
                         f"Collection '{self.mongo_collection}' already exists in database '{self.mongo_db}'. "
                         f"Skipping creation. Error: {e}"
                     )
-                    await self.enable_sharding()
                 except Exception as e:
                     logger.error(
                         f"Failed to create collection '{self.mongo_collection}' "
@@ -126,6 +123,8 @@ class MongoConnectorBuilder(MongoConnectorContextManager):
                     raise MongoDBConnectorError(
                         message=f"Failed to create collection '{self.mongo_collection}': {e}"
                     ) from e
+
+            await self.enable_sharding()
 
     async def enable_sharding(self):
         if self.client is None:
