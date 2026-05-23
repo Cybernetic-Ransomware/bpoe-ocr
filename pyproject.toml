@@ -58,6 +58,7 @@ data_file = "result/.coverage"
 [tool.ruff]
 extend-exclude = []
 line-length = 124
+exclude = ["tests/*"]
 
 [tool.ruff.format]
 docstring-code-format = true
