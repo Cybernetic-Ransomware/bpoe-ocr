@@ -35,7 +35,7 @@ dev = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-addopts = ["--junitxml=./result/pytest_result.xml", "--cov=src", "--cov-report=html:result/html", "-m", "not integration"]
+addopts = ["--junitxml=./result/pytest_result.xml", "--cov=src", "--cov-report=html:result/html"]
 asyncio_mode = "auto"
 markers = [
     "unit: fast isolated unit tests (no external services)",

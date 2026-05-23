@@ -24,13 +24,17 @@ lint:
     uv run python -m codespell_lib src/
     uv run bandit -r src/ -c pyproject.toml -q
 
-# Run unit tests (excludes integration by default)
+# Run unit tests (excludes integration)
 test:
-    uv run pytest
+    uv run pytest -m "not integration"
 
 # Run integration tests (requires Docker — starts real MongoDB via testcontainers)
 test-integration:
     uv run pytest -m integration
+
+# Run all tests including integration
+test-all:
+    uv run pytest
 
 # Start full Docker stack (app + mongo + minio) with rebuild
 up:
