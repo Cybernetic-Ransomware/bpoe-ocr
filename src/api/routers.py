@@ -92,7 +92,8 @@ async def process_ocr_task(
         raise UnsupportedOCREngine(message=ocr_engine)
 
     ocred_text = await asyncio.to_thread(engine.ocr_file, file_name)
-    logger.info(f"OCR result: {str(ocred_text)} --- for file {file_name}")
+    logger.info(f"OCR result: {len(ocred_text.get('text', []))} line(s) extracted for file {file_name}")
+    logger.debug(f"OCR result full text: {str(ocred_text)} --- for file {file_name}")
     async with MongoConnectorRunner() as mongorunner:
         await mongorunner.upload_ocr_result(file_name, ocred_text.get("text", []), body.user_email)
     try:
