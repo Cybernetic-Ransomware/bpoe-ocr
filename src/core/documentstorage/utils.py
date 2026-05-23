@@ -68,18 +68,19 @@ class MongoConnectorContextManager(ABC):  # noqa B024
             raise MongoDBConnectorError(message="Database connection not initialized")
         try:
             result = await self.database.command("usersInfo", {"forAllDBs": False})
-            roles = result.get("users", [])[0].get("roles", [])
-
-            forbidden_roles = {"dbAdmin", "userAdmin", "readWriteAnyDatabase", "dbOwner", "root", "clusterAdmin"}
-
-            for role in roles:
-                if role["role"] in forbidden_roles or role["role"].endswith("Admin"):
-                    raise MongoDBConnectorError(message=f"User role not allowed: {role['role']} on the base: {role['db']}")
-
         except Exception as e:
             message = "Error during getting user role"
             logger.error(f"{message}: {e}")
             raise MongoDBConnectorError(message=message) from e
+
+        users = result.get("users", [])
+        if not users:
+            raise MongoDBConnectorError(message="No users found for the current database connection")
+
+        forbidden_roles = {"dbAdmin", "userAdmin", "readWriteAnyDatabase", "dbOwner", "root", "clusterAdmin"}
+        for role in users[0].get("roles", []):
+            if role["role"] in forbidden_roles or role["role"].endswith("Admin"):
+                raise MongoDBConnectorError(message=f"User role not allowed: {role['role']} on the base: {role['db']}")
 
 
 class MongoConnectorBuilder(MongoConnectorContextManager):

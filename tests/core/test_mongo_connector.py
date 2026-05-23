@@ -126,6 +126,52 @@ async def test_initialize_skips_creation_when_collection_exists():
 
 
 @pytest.mark.unit
+async def test_ensure_non_admin_user_raises_when_no_users():
+    mock_database = AsyncMock()
+    mock_database.command = AsyncMock(return_value={"users": []})
+
+    mock_client = _mock_client()
+    with patch("src.core.documentstorage.utils.AsyncMongoClient", return_value=mock_client):
+        async with MongoConnectorRunner() as runner:
+            runner.database = mock_database
+            with pytest.raises(MongoDBConnectorError) as exc_info:
+                await runner.ensure_non_admin_user()
+
+    assert "No users found" in exc_info.value.detail
+
+
+@pytest.mark.unit
+async def test_ensure_non_admin_user_raises_with_forbidden_role():
+    mock_database = AsyncMock()
+    mock_database.command = AsyncMock(
+        return_value={"users": [{"roles": [{"role": "dbAdmin", "db": "ocr"}]}]}
+    )
+
+    mock_client = _mock_client()
+    with patch("src.core.documentstorage.utils.AsyncMongoClient", return_value=mock_client):
+        async with MongoConnectorRunner() as runner:
+            runner.database = mock_database
+            with pytest.raises(MongoDBConnectorError) as exc_info:
+                await runner.ensure_non_admin_user()
+
+    assert "dbAdmin" in exc_info.value.detail
+
+
+@pytest.mark.unit
+async def test_ensure_non_admin_user_passes_with_allowed_role():
+    mock_database = AsyncMock()
+    mock_database.command = AsyncMock(
+        return_value={"users": [{"roles": [{"role": "readWrite", "db": "ocr"}]}]}
+    )
+
+    mock_client = _mock_client()
+    with patch("src.core.documentstorage.utils.AsyncMongoClient", return_value=mock_client):
+        async with MongoConnectorRunner() as runner:
+            runner.database = mock_database
+            await runner.ensure_non_admin_user()
+
+
+@pytest.mark.unit
 async def test_upload_ocr_result_not_initialized():
     mock_client = _mock_client()
     with (
