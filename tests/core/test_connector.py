@@ -25,13 +25,14 @@ def test_s3_connector_success():
 def test_s3_connector_endpoint_connection_error():
     with (
         patch("boto3.client", side_effect=botocore.exceptions.EndpointConnectionError(endpoint_url="http://minio")),
+        patch("src.core.filestorage.exceptions.DEBUG", False),
         pytest.raises(MinIOConnectorError) as exc_info,
         _Connector(),
     ):
         pass
 
     assert exc_info.value.status_code == 503
-    assert "MinIO is unavailable" in exc_info.value.detail
+    assert exc_info.value.detail == "Storage error"
 
 
 @pytest.mark.unit
@@ -42,13 +43,27 @@ def test_s3_connector_client_error():
     )
     with (
         patch("boto3.client", return_value=mock_client),
+        patch("src.core.filestorage.exceptions.DEBUG", False),
         pytest.raises(MinIOConnectorError) as exc_info,
         _Connector(),
     ):
         pass
 
     assert exc_info.value.status_code == 500
-    assert "MinIO error" in exc_info.value.detail
+    assert exc_info.value.detail == "Storage error"
+
+
+@pytest.mark.unit
+def test_minio_error_5xx_preserves_detail_in_debug():
+    with patch("src.core.filestorage.exceptions.DEBUG", True):
+        error = MinIOConnectorError(code=500, message="MinIO error: endpoint unreachable")
+    assert error.detail == "MinIO error: endpoint unreachable"
+
+
+@pytest.mark.unit
+def test_minio_error_4xx_always_preserves_detail():
+    error = MinIOConnectorError(code=404, message="File not found: abc.jpg")
+    assert error.detail == "File not found: abc.jpg"
 
 
 @pytest.mark.unit

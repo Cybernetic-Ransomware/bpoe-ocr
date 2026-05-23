@@ -66,6 +66,37 @@ async def test_download_not_allowed_in_production():
 
 
 @pytest.mark.unit
+async def test_http_exception_handler_5xx_sanitizes_detail_in_production():
+    mock_uploader = MagicMock()
+    mock_uploader.__enter__ = MagicMock(return_value=mock_uploader)
+    mock_uploader.__exit__ = MagicMock(return_value=False)
+    mock_uploader.upload_file = MagicMock(return_value=False)
+
+    with (
+        patch("src.api.routers.S3ImageUploader", return_value=mock_uploader),
+        patch("src.main.DEBUG", False),
+    ):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+            response = await client.post(
+                "/api/upload/test_file.jpg",
+                files={"file": ("test.jpg", b"fake image data", "image/jpeg")},
+            )
+
+    assert response.status_code == 500
+    assert response.json()["detail"] == "Internal server error"
+
+
+@pytest.mark.unit
+async def test_http_exception_handler_4xx_preserves_detail():
+    with patch("src.api.routers.DEBUG", False):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+            response = await client.get("/api/download/some_file.jpg")
+
+    assert response.status_code == 403
+    assert "not allowed" in response.json()["detail"]
+
+
+@pytest.mark.unit
 async def test_process_ocr_unsupported_engine():
     async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
         response = await client.post(
