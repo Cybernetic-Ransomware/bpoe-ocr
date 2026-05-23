@@ -1,4 +1,5 @@
 from io import BytesIO
+from pathlib import Path
 from typing import BinaryIO
 
 import botocore.exceptions
@@ -14,6 +15,8 @@ from src.core.filestorage.abc_connector import S3ConnectorContextManager
 from src.core.filestorage.exceptions import MinIOConnectorError
 
 logger = setup_logger(__name__, "filestorage")
+
+_IMAGE_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff"})
 
 
 class S3HealthChecker(S3ConnectorContextManager):
@@ -47,7 +50,7 @@ class S3ImageUploader(S3ConnectorContextManager):
         raise ConnectorMethodNotAllowed(message=self.__class__.__name__)
 
     def upload_file(self, file_obj: BinaryIO, file_name: str) -> bool:
-        if "." not in file_name:
+        if Path(file_name).suffix.lower() not in _IMAGE_EXTENSIONS:
             raise FileBlobHasNoExtension()
         try:
             self.client.head_object(Bucket=self.bucket_name, Key=file_name)
@@ -137,11 +140,8 @@ class S3ImageReader(S3ConnectorContextManager):
             if "Contents" not in response:
                 return []
 
-            image_extensions = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff"}
             image_files = [
-                obj["Key"]
-                for obj in response["Contents"]
-                if any(obj["Key"].lower().endswith(ext) for ext in image_extensions)
+                obj["Key"] for obj in response["Contents"] if Path(obj["Key"]).suffix.lower() in _IMAGE_EXTENSIONS
             ]
 
             return image_files

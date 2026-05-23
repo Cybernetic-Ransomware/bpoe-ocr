@@ -3,8 +3,10 @@ from unittest.mock import MagicMock, patch
 import botocore.exceptions
 import pytest
 
+from src.api.exceptions import FileBlobHasNoExtension
 from src.core.filestorage.abc_connector import S3ConnectorContextManager
 from src.core.filestorage.exceptions import MinIOConnectorError
+from src.core.filestorage.utils import S3ImageUploader
 
 
 class _Connector(S3ConnectorContextManager):
@@ -64,6 +66,36 @@ def test_minio_error_5xx_preserves_detail_in_debug():
 def test_minio_error_4xx_always_preserves_detail():
     error = MinIOConnectorError(code=404, message="File not found: abc.jpg")
     assert error.detail == "File not found: abc.jpg"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "file_name",
+    [
+        ".gitignore",
+        "file.",
+        "document.pdf",
+        "script.py",
+    ],
+)
+def test_upload_file_rejects_invalid_extension(file_name: str):
+    uploader = S3ImageUploader("fake_key", "fake_secret")
+    with pytest.raises(FileBlobHasNoExtension):
+        uploader.upload_file(MagicMock(), file_name)
+
+
+@pytest.mark.unit
+def test_upload_file_accepts_valid_image_extension():
+    uploader = S3ImageUploader("fake_key", "fake_secret")
+    mock_client = MagicMock()
+    mock_client.head_object.side_effect = botocore.exceptions.ClientError(
+        {"Error": {"Code": "404", "Message": "Not Found"}}, "HeadObject"
+    )
+    uploader.client = mock_client
+
+    result = uploader.upload_file(MagicMock(), "image.jpg")
+
+    assert result is True
 
 
 @pytest.mark.unit
