@@ -22,6 +22,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     detail = exc.detail if (DEBUG or exc.status_code < 500) else "Internal server error"
     return JSONResponse(
         status_code=exc.status_code,
+        headers=exc.headers,
         content=ErrorResponse(
             status_code=exc.status_code,
             error=type(exc).__name__,
