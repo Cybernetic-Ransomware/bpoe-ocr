@@ -33,6 +33,7 @@ class PytesseractReader:
     def ocr_file(self, file_name: str) -> dict[str, list]:
         with self.reader as bucket_connector:
             file_blop = bucket_connector.get_image_as_pil(file_name=file_name)
+            file_blop.load()
 
         rotated_image = self.ocr_rotated_by_pillow(file_blop, file_name=file_name)
         ocr_text = pytesseract.image_to_data(
