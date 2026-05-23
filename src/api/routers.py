@@ -5,6 +5,7 @@ from src.api.exceptions import (
     FileTransferInterrupted,
     UnsupportedOCREngine,
 )
+from src.api.schemas import OcrRequest
 from src.conf_logger import setup_logger
 from src.config import (
     DEBUG,
@@ -71,12 +72,13 @@ async def download_file(file_name: str):
 
 
 @router.post("/process_ocr/", response_model=dict[str, list[str]])
-async def process_ocr_task(file_name: str, user_email: str, ocr_engine: str = "pytesseract") -> dict[str, list[str]]:  # type: ignore[assignment]
+async def process_ocr_task(file_name: str, body: OcrRequest, ocr_engine: str = "pytesseract") -> dict[str, list[str]]:  # type: ignore[assignment]
     """
     Processes the OCR task by fetching the image from the storage, applying OCR,
     and returning the extracted text. The file is deleted from the storage after processing.
 
     :param file_name: str, unique file name (UUID) that exists in the bucket
+    :param body: OcrRequest, request body containing user_email
     :param ocr_engine: str, the OCR engine to use (default is PytesseractReader)
     :return: dict[str, list[str]], OCR result with the file name as the key and extracted text as the value
     """
@@ -87,6 +89,6 @@ async def process_ocr_task(file_name: str, user_email: str, ocr_engine: str = "p
     ocred_text = engine.ocr_file(file_name)
     logger.info(f"OCR result: {str(ocred_text)} --- for file {file_name}")
     async with MongoConnectorRunner() as mongorunner:
-        await mongorunner.upload_ocr_result(file_name, ocred_text.get("text", []), user_email)
+        await mongorunner.upload_ocr_result(file_name, ocred_text.get("text", []), body.user_email)
     delete_file(file_name)
     return {file_name: ocred_text.get("text", [])}

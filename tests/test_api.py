@@ -70,7 +70,8 @@ async def test_process_ocr_unsupported_engine():
     async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
         response = await client.post(
             "/api/process_ocr/",
-            params={"file_name": "test.jpg", "user_email": "user@example.com", "ocr_engine": "unknown_engine"},
+            params={"file_name": "test.jpg", "ocr_engine": "unknown_engine"},
+            json={"user_email": "user@example.com"},
         )
 
     assert response.status_code == 404
@@ -94,8 +95,10 @@ async def test_process_ocr_success():
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
             response = await client.post(
                 "/api/process_ocr/",
-                params={"file_name": "test.jpg", "user_email": "user@example.com"},
+                params={"file_name": "test.jpg"},
+                json={"user_email": "user@example.com"},
             )
 
     assert response.status_code == 200
     assert response.json() == {"test.jpg": ["Hello", "World"]}
+    mock_runner.upload_ocr_result.assert_called_once_with("test.jpg", ["Hello", "World"], "user@example.com")
