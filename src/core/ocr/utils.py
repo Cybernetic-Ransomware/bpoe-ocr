@@ -1,11 +1,9 @@
-import numpy as np
 import pytesseract
 from PIL import Image
 
 from src.conf_logger import setup_logger
 from src.config import MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY
 from src.core.filestorage.utils import S3ImageReader
-from src.core.ocr.exceptions import FileNotFoundInBucket
 
 logger = setup_logger(__name__, "ocr")
 
@@ -35,8 +33,6 @@ class PytesseractReader:
     def ocr_file(self, file_name: str) -> dict[str, list]:
         with self.reader as bucket_connector:
             file_blop = bucket_connector.get_image_as_pil(file_name=file_name)
-            if not np.any(file_blop):
-                raise FileNotFoundInBucket(message=f"File: {file_name}")
 
         rotated_image = self.ocr_rotated_by_pillow(file_blop, file_name=file_name)
         ocr_text = pytesseract.image_to_data(

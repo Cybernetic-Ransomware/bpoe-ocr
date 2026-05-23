@@ -19,9 +19,5 @@ MONGO_WRITER_URI = config("MONGO_WRITER_URI")
 MONGO_DB = config("MONGO_DB")
 MONGO_COLLECTION = config("MONGO_COLLECTION")
 
-DEBUG = False
-LOGGER_LEVEL = INFO
-
-if config("DEBUG"):
-    DEBUG = config("DEBUG")
-    LOGGER_LEVEL = 10
+DEBUG: bool = config("DEBUG", default=False, cast=bool)
+LOGGER_LEVEL = 10 if DEBUG else INFO
