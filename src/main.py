@@ -14,12 +14,13 @@ app = FastAPI(lifespan=lifespan)
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    detail = exc.detail if (DEBUG or exc.status_code < 500) else "Internal server error"
     return JSONResponse(
         status_code=exc.status_code,
         content=ErrorResponse(
             status_code=exc.status_code,
             error=type(exc).__name__,
-            detail=exc.detail,
+            detail=detail,
         ).model_dump(),
     )
 
