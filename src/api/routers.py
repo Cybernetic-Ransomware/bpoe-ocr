@@ -46,11 +46,15 @@ async def upload_file(
     :param file: UploadFile, binary image blob received from frontend.
     :return: dict[str, str], confirmation message.
     """
-    with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as bucket_connector:
-        success = bucket_connector.upload_file(file_obj=file.file, file_name=file_name)
-        if success:
-            return {"message": f"File '{file_name}' uploaded successfully"}
-        raise FileTransferInterrupted()
+
+    def _upload() -> bool:
+        with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as connector:
+            return connector.upload_file(file_obj=file.file, file_name=file_name)
+
+    success = await asyncio.to_thread(_upload)
+    if success:
+        return {"message": f"File '{file_name}' uploaded successfully"}
+    raise FileTransferInterrupted()
 
 
 def delete_file(file_name: str) -> None:
@@ -68,8 +72,12 @@ async def download_file(file_name: str = Path(..., pattern=_FILE_NAME_PATTERN)):
     """
     if not DEBUG:
         raise EndpointNotAllowed()
-    with S3ImageReader(MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY) as bucket_connector:
-        return bucket_connector.download_file(file_name=file_name)
+
+    def _download():
+        with S3ImageReader(MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY) as connector:
+            return connector.download_file(file_name=file_name)
+
+    return await asyncio.to_thread(_download)
 
 
 @router.post("/process_ocr/", response_model=dict[str, list[str]])
