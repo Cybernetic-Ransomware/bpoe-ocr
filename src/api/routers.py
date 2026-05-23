@@ -80,12 +80,12 @@ async def download_file(file_name: str = Path(..., pattern=_FILE_NAME_PATTERN)):
     return await asyncio.to_thread(_download)
 
 
-@router.post("/process_ocr/", response_model=dict[str, list[str]])
+@router.post("/process_ocr/")
 async def process_ocr_task(
     file_name: Annotated[str, Query(pattern=_FILE_NAME_PATTERN)],
     body: OcrRequest,
     ocr_engine: str = "pytesseract",
-) -> dict[str, list[str]]:  # type: ignore[assignment]
+) -> dict[str, list[str]]:
     """
     Processes the OCR task by fetching the image from the storage, applying OCR,
     and returning the extracted text. The file is deleted from the storage after processing.
