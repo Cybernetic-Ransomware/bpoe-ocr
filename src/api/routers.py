@@ -5,6 +5,7 @@ from fastapi import APIRouter, File, Path, Query, UploadFile
 
 from src.api.exceptions import (
     EndpointNotAllowed,
+    ErrorResponse,
     FileTransferInterrupted,
     UnsupportedOCREngine,
 )
@@ -34,7 +35,7 @@ ocr_engines = {
 _FILE_NAME_PATTERN = r"^[A-Za-z0-9._-]{1,255}$"
 
 
-@router.post("/upload/{file_name}")
+@router.post("/upload/{file_name}", status_code=201, responses={500: {"model": ErrorResponse}})
 async def upload_file(
     file_name: str = Path(..., pattern=_FILE_NAME_PATTERN),
     file: UploadFile = File(...),
@@ -62,7 +63,14 @@ def _delete_file(file_name: str) -> None:
         bucket_connector.delete_file(file_name)
 
 
-@router.get("/download/{file_name}")
+@router.get(
+    "/download/{file_name}",
+    responses={
+        403: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    },
+)
 async def download_file(file_name: str = Path(..., pattern=_FILE_NAME_PATTERN)):
     """
     Downloads a file from the storage. This endpoint is intended for testing purposes only.
@@ -80,7 +88,14 @@ async def download_file(file_name: str = Path(..., pattern=_FILE_NAME_PATTERN)):
     return await asyncio.to_thread(_download)
 
 
-@router.post("/process_ocr")
+@router.post(
+    "/process_ocr",
+    responses={
+        400: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    },
+)
 async def process_ocr_task(
     file_name: Annotated[str, Query(pattern=_FILE_NAME_PATTERN)],
     body: OcrRequest,

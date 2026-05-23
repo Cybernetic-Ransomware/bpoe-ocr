@@ -31,7 +31,7 @@ async def test_upload_file_success():
                 files={"file": ("test.jpg", b"fake image data", "image/jpeg")},
             )
 
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert response.json()["message"] == "File 'test_file.jpg' uploaded successfully"
 
 
@@ -101,7 +101,7 @@ async def test_http_exception_handler_4xx_preserves_detail():
 async def test_process_ocr_unsupported_engine():
     async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
         response = await client.post(
-            "/api/process_ocr/",
+            "/api/process_ocr",
             params={"file_name": "test.jpg", "ocr_engine": "unknown_engine"},
             json={"user_email": "user@example.com"},
         )
@@ -143,7 +143,7 @@ async def test_upload_rejects_invalid_file_name(file_name: str):
 async def test_process_ocr_rejects_invalid_file_name(file_name: str):
     async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
         response = await client.post(
-            "/api/process_ocr/",
+            "/api/process_ocr",
             params={"file_name": file_name},
             json={"user_email": "user@example.com"},
         )
@@ -170,7 +170,7 @@ async def test_process_ocr_success():
         mock_to_thread.side_effect = [{"text": ["Hello", "World"]}, None]
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
             response = await client.post(
-                "/api/process_ocr/",
+                "/api/process_ocr",
                 params={"file_name": "test.jpg"},
                 json={"user_email": "user@example.com"},
             )
@@ -198,7 +198,7 @@ async def test_process_ocr_returns_success_when_delete_fails():
         mock_to_thread.side_effect = [{"text": ["extracted"]}, Exception("S3 delete failed")]
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
             response = await client.post(
-                "/api/process_ocr/",
+                "/api/process_ocr",
                 params={"file_name": "test.jpg"},
                 json={"user_email": "user@example.com"},
             )
