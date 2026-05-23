@@ -28,11 +28,6 @@ ocr_engines = {
 }
 
 
-@router.get("/", include_in_schema=False)
-async def healthcheck():
-    return {"status": "OK"}
-
-
 @router.post("/upload/{file_name}")
 async def upload_file(file_name: str, file: UploadFile | None = None) -> dict[str, str]:
     """
