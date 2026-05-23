@@ -23,12 +23,12 @@ class PytesseractReader:
         except Exception as e:
             logger.error(e)
             rotation_angle = 0
-        response = self.rotate_image_pil(image, rotation_angle) if rotation_angle else image
+        rotated = self.rotate_image_pil(image, rotation_angle) if rotation_angle else image
         logger.debug(
             f"Image: {file_name}, of sizes: {image.size} "
             f"{f'was rotated by {rotation_angle}' if rotation_angle else 'Was not rotated'}"
         )
-        return response
+        return rotated
 
     def ocr_file(self, file_name: str) -> dict[str, list]:
         with self.reader as bucket_connector:
