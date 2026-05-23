@@ -12,8 +12,9 @@ The purpose of this project is to build an OCR microservice.
 - accessible only via a gateway connection.
 
 ## Requirements
-- Python 3.13.2 with UV package manager
+- Python 3.14+ with UV package manager
 - Docker Desktop / Docker + Compose
+- [just](https://github.com/casey/just) task runner (optional, but recommended)
 
 ## Getting Started (Windows)
 ### Deploy
@@ -59,30 +60,27 @@ The purpose of this project is to build an OCR microservice.
 #### Postman
 - The repository will include a Postman collection with ready-to-import webhook mockers
 
+#### just (recommended)
+Common tasks are available via the `just` task runner:
+```powershell
+just test              # unit tests
+just test-integration  # integration tests (requires Docker)
+just lint              # ruff + ty + codespell + bandit
+just format            # ruff format
+just up / just down    # Docker stack
+```
+
 #### Pytest
 ```powershell
-uv sync --extra dev
+uv sync
 uv run pytest
 ```
 
-#### Ruff
+#### Ruff + ty
 ```powershell
-uv sync --extra dev
-uv run ruff check
-```
-or as a standalone tool:
-```powershell
-uvx ruff check
-```
-
-#### Mypy
-```powershell
-uv sync --extra dev
-uv run mypy .\src\
-```
-or as a standalone tool:
-```powershell
-uvx mypy .\src\
+uv sync
+uv run ruff check src/
+uv run ty check src/
 ```
 
 #### Quick MiniIO Instance:
@@ -119,6 +117,11 @@ To verify if sharding is enabled for a collection:
    sh.enableSharding("ocr")
    sh.shardCollection("ocr.ocr_images", { _id: 1 })
    ```
+
+## TODO / Known limitations
+
+- **Orphaned Mongo records after S3 delete failure** — when `process_ocr` succeeds but the subsequent S3 cleanup fails, the Mongo record is retained and the file remains in the bucket. A scheduled cleanup job (or a TTL index on the collection) should identify and remove records whose corresponding S3 objects no longer exist, or vice versa.
+- **Inter-service authorization** — endpoints are currently accessible to any caller that can reach the service. Requests from the API gateway should be authenticated (e.g. shared secret header, mTLS, or a service token) to prevent unauthorized access to OCR and storage operations.
 
 ## Useful links and documentation
 - Boto3 examples: [Amazon doc](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-examples.html)
