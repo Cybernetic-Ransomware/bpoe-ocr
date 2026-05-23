@@ -21,10 +21,10 @@ class S3HealthChecker(S3ConnectorContextManager):
         super().__init__(access_key, secret_key)
 
     def download_file(self, file_name: str) -> None:
-        raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
+        raise ConnectorMethodNotAllowed(message=self.__class__.__name__)
 
     def upload_file(self, file_obj: BinaryIO, file_name: str) -> bool:
-        raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
+        raise ConnectorMethodNotAllowed(message=self.__class__.__name__)
 
     def healthcheck(self):
         try:
@@ -44,7 +44,7 @@ class S3ImageUploader(S3ConnectorContextManager):
         super().__init__(access_key, secret_key)
 
     def download_file(self, file_name: str) -> None:
-        raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
+        raise ConnectorMethodNotAllowed(message=self.__class__.__name__)
 
     def upload_file(self, file_obj: BinaryIO, file_name: str) -> bool:
         if "." not in file_name:
@@ -95,7 +95,7 @@ class S3ImageReader(S3ConnectorContextManager):
             raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}") from e
 
     def upload_file(self, file_obj: BinaryIO, file_name: str) -> bool:
-        raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
+        raise ConnectorMethodNotAllowed(message=self.__class__.__name__)
 
     def get_image_as_numpy(self, file_name: str) -> np.ndarray:
         try:
