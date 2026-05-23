@@ -122,6 +122,7 @@ To verify if sharding is enabled for a collection:
 
 - **Orphaned Mongo records after S3 delete failure** — when `process_ocr` succeeds but the subsequent S3 cleanup fails, the Mongo record is retained and the file remains in the bucket. A scheduled cleanup job (or a TTL index on the collection) should identify and remove records whose corresponding S3 objects no longer exist, or vice versa.
 - **Readiness probe** — `GET /healthz` is a liveness check only (process is alive). A `/readyz` endpoint performing lightweight Mongo + S3 pings is needed for orchestrators to distinguish a live-but-not-ready container from a healthy one.
+- **MongoDB authentication** — the MongoDB cluster runs without `--auth`, giving any service on `mongonetwork` full R/W access. Requires enabling auth in `mongo-init.sh` (keyfile between replica members, `admin`/`clusterAdmin`/writer users), updating all `mongod`/`mongos` commands, and injecting credentials via `MONGO_WRITER_URI`/`MONGO_ADMIN_URI` in `.env`. Also: `MONGODB_URI` in the `environment:` block of `docker-compose.yml` appears unused — the application reads `MONGO_WRITER_URI` and `MONGO_ADMIN_URI` from `env_file`.
 - **Inter-service authorization** — endpoints are currently accessible to any caller that can reach the service. Requests from the API gateway should be authenticated (e.g. shared secret header, mTLS, or a service token) to prevent unauthorized access to OCR and storage operations.
 
 ## Useful links and documentation
