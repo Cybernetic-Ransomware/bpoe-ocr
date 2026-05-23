@@ -109,7 +109,7 @@ class S3ImageReader(S3ConnectorContextManager):
             image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
             if image is None:
-                raise MinIOConnectorError(code=404, message=f"File not found: {file_name}")
+                raise MinIOConnectorError(code=422, message=f"Unable to decode image: {file_name}")
 
             return image
 
