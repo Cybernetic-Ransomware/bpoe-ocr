@@ -11,11 +11,16 @@ from src.core.documentstorage.models import OCRedImageResult
 
 logger = setup_logger(__name__, "documentstorage")
 
-_UNSUPPORTED_MONGO_KEYWORDS = frozenset({"format", "title"})
+_UNSUPPORTED_MONGO_KEYWORDS = frozenset({"format", "title", "$schema", "examples"})
 
 
 def _strip_unsupported_schema_keywords(node: Any) -> None:
-    """Recursively remove JSON Schema keywords rejected by MongoDB's $jsonSchema validator."""
+    """Recursively remove JSON Schema keywords rejected by MongoDB's $jsonSchema validator.
+
+    Limitation: models with nested Pydantic models generate $defs + $ref pointers.
+    Stripping $defs alone leaves dangling $ref values — nested models require $ref
+    inlining before this function would work correctly with MongoDB.
+    """
     if isinstance(node, dict):
         for key in _UNSUPPORTED_MONGO_KEYWORDS:
             node.pop(key, None)
