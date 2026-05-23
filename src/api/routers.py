@@ -80,7 +80,7 @@ async def download_file(file_name: str = Path(..., pattern=_FILE_NAME_PATTERN)):
     return await asyncio.to_thread(_download)
 
 
-@router.post("/process_ocr/")
+@router.post("/process_ocr")
 async def process_ocr_task(
     file_name: Annotated[str, Query(pattern=_FILE_NAME_PATTERN)],
     body: OcrRequest,

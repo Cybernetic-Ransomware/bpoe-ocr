@@ -106,7 +106,7 @@ class S3ImageReader(S3ConnectorContextManager):
             image_bytes = response["Body"].read()
 
             image_array = np.asarray(bytearray(image_bytes), dtype=np.uint8)
-            image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+            image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)  # ty: ignore[unresolved-attribute]
 
             if image is None:
                 raise MinIOConnectorError(code=422, message=f"Unable to decode image: {file_name}")
