@@ -1,4 +1,3 @@
-from abc import ABC
 from typing import Any
 
 from pymongo import AsyncMongoClient
@@ -31,11 +30,8 @@ def _strip_unsupported_schema_keywords(node: Any) -> None:
             _strip_unsupported_schema_keywords(item)
 
 
-class MongoConnectorContextManager(ABC):  # noqa B024
+class MongoConnectorContextManager:
     def __new__(cls, *args, **kwargs):
-        """
-        @abstractmethod can not decorate __init__, which in this case should be reimplemented.
-        """
         if cls is MongoConnectorContextManager:
             raise TypeError("MongoConnectorContextManager cannot be instantiated directly")
         return super().__new__(cls)
