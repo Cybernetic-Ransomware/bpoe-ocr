@@ -22,7 +22,7 @@ lint:
     uv run ruff check --fix src/
     uv run ty check src/
     uv run python -m codespell_lib src/
-    uv run bandit -r src/ -c pyproject.toml
+    uv run bandit -r src/ -c pyproject.toml -q
 
 # Run unit tests (excludes integration by default)
 test:

@@ -42,7 +42,7 @@ repos:
 
       - id: bandit
         name: bandit security check
-        entry: uv run bandit -r src/ -c pyproject.toml
+        entry: uv run bandit -r src/ -c pyproject.toml -q
         language: system
         types: [python]
         files: ^src/
