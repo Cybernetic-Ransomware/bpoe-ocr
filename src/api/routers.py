@@ -95,5 +95,8 @@ async def process_ocr_task(
     logger.info(f"OCR result: {str(ocred_text)} --- for file {file_name}")
     async with MongoConnectorRunner() as mongorunner:
         await mongorunner.upload_ocr_result(file_name, ocred_text.get("text", []), body.user_email)
-    await asyncio.to_thread(delete_file, file_name)
+    try:
+        await asyncio.to_thread(delete_file, file_name)
+    except Exception as e:
+        logger.warning(f"Failed to delete '{file_name}' from storage after OCR: {e}")
     return {file_name: ocred_text.get("text", [])}

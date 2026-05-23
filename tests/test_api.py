@@ -179,3 +179,28 @@ async def test_process_ocr_success():
     mock_runner.upload_ocr_result.assert_called_once_with("test.jpg", ["Hello", "World"], "user@example.com")
     mock_to_thread.assert_any_await(mock_engine.ocr_file, "test.jpg")
     mock_to_thread.assert_any_await(mock_delete, "test.jpg")
+
+
+@pytest.mark.unit
+async def test_process_ocr_returns_success_when_delete_fails():
+    mock_engine = MagicMock()
+
+    mock_runner = AsyncMock()
+    mock_runner.__aenter__ = AsyncMock(return_value=mock_runner)
+    mock_runner.upload_ocr_result = AsyncMock(return_value="inserted-id")
+
+    with (
+        patch.dict("src.api.routers.ocr_engines", {"pytesseract": mock_engine}),
+        patch("src.api.routers.MongoConnectorRunner", return_value=mock_runner),
+        patch("src.api.routers.asyncio.to_thread", new_callable=AsyncMock) as mock_to_thread,
+    ):
+        mock_to_thread.side_effect = [{"text": ["extracted"]}, Exception("S3 delete failed")]
+        async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+            response = await client.post(
+                "/api/process_ocr/",
+                params={"file_name": "test.jpg"},
+                json={"user_email": "user@example.com"},
+            )
+
+    assert response.status_code == 200
+    assert response.json() == {"test.jpg": ["extracted"]}
