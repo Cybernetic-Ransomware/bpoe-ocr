@@ -9,7 +9,12 @@ from src.lifespan import lifespan
 
 logger = setup_logger(__name__, "main")
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    docs_url="/docs" if DEBUG else None,
+    openapi_url="/openapi.json" if DEBUG else None,
+    redoc_url=None,
+)
 
 
 @app.exception_handler(HTTPException)
