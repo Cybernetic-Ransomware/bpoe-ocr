@@ -57,7 +57,7 @@ async def upload_file(
     raise FileTransferInterrupted()
 
 
-def delete_file(file_name: str) -> None:
+def _delete_file(file_name: str) -> None:
     with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as bucket_connector:
         bucket_connector.delete_file(file_name)
 
@@ -105,7 +105,7 @@ async def process_ocr_task(
     async with MongoConnectorRunner() as mongorunner:
         await mongorunner.upload_ocr_result(file_name, ocred_text.get("text", []), body.user_email)
     try:
-        await asyncio.to_thread(delete_file, file_name)
+        await asyncio.to_thread(_delete_file, file_name)
     except Exception as e:
         logger.warning(f"Failed to delete '{file_name}' from storage after OCR: {e}")
     return {file_name: ocred_text.get("text", [])}

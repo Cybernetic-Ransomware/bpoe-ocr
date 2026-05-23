@@ -164,7 +164,7 @@ async def test_process_ocr_success():
     with (
         patch.dict("src.api.routers.ocr_engines", {"pytesseract": mock_engine}),
         patch("src.api.routers.MongoConnectorRunner", return_value=mock_runner),
-        patch("src.api.routers.delete_file", mock_delete),
+        patch("src.api.routers._delete_file", mock_delete),
         patch("src.api.routers.asyncio.to_thread", new_callable=AsyncMock) as mock_to_thread,
     ):
         mock_to_thread.side_effect = [{"text": ["Hello", "World"]}, None]
