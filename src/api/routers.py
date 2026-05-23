@@ -29,7 +29,7 @@ ocr_engines = {
 
 
 @router.post("/upload/{file_name}")
-async def upload_file(file_name: str, file: UploadFile | None = None) -> dict[str, str]:
+async def upload_file(file_name: str, file: UploadFile = File(...)) -> dict[str, str]:
     """
     API Gateway uploads an image directly to S3/MiniIO.
 
@@ -37,9 +37,6 @@ async def upload_file(file_name: str, file: UploadFile | None = None) -> dict[st
     :param file: UploadFile, binary image blob received from frontend.
     :return: dict[str, str], confirmation message.
     """
-    if file is None:
-        file = File(...)
-
     with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as bucket_connector:
         success = bucket_connector.upload_file(file_obj=file.file, file_name=file_name)
         if success:
