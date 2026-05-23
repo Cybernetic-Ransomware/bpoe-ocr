@@ -29,5 +29,5 @@ class EndpointNotAllowed(HTTPException):
 
 
 class UnsupportedOCREngine(HTTPException):
-    def __init__(self, code: int = 404, message: str = ""):
+    def __init__(self, code: int = 400, message: str = ""):
         super().__init__(status_code=code, detail=f"Unsupported OCR engine: {message}")

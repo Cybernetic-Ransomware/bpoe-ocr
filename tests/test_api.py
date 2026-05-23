@@ -105,7 +105,7 @@ async def test_process_ocr_unsupported_engine():
             json={"user_email": "user@example.com"},
         )
 
-    assert response.status_code == 404
+    assert response.status_code == 400
     assert "Unsupported OCR engine" in response.json()["detail"]
 
 
