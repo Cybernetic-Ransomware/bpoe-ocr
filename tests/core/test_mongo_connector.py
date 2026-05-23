@@ -4,7 +4,7 @@ import pytest
 from pymongo.errors import ServerSelectionTimeoutError
 
 from src.core.documentstorage.exceptions import MongoDBConnectorError
-from src.core.documentstorage.utils import MongoConnectorRunner
+from src.core.documentstorage.utils import MongoConnectorBuilder, MongoConnectorRunner
 
 
 def _mock_client():
@@ -81,6 +81,48 @@ async def test_upload_ocr_result_success():
             result = await runner.upload_ocr_result("file.jpg", ["Hello", "World"], "user@example.com")
 
     assert result == "abc123"
+
+
+@pytest.mark.unit
+async def test_initialize_creates_collection_when_missing():
+    mock_database = AsyncMock()
+    mock_database.list_collection_names = AsyncMock(return_value=[])
+    mock_database.create_collection = AsyncMock()
+
+    mock_client = AsyncMock()
+    mock_client.server_info = AsyncMock(return_value={})
+    mock_client.close = AsyncMock()
+    mock_client.__getitem__ = MagicMock(return_value=mock_database)
+
+    with (
+        patch("src.core.documentstorage.utils.AsyncMongoClient", return_value=mock_client),
+        patch.object(MongoConnectorBuilder, "enable_sharding", new=AsyncMock()),
+    ):
+        await MongoConnectorBuilder(mongo_db="existing_db", mongo_collection="new_col").initialize()
+
+    mock_database.create_collection.assert_called_once()
+    _, kwargs = mock_database.create_collection.call_args
+    assert "validator" in kwargs
+
+
+@pytest.mark.unit
+async def test_initialize_skips_creation_when_collection_exists():
+    mock_database = AsyncMock()
+    mock_database.list_collection_names = AsyncMock(return_value=["existing_col"])
+    mock_database.create_collection = AsyncMock()
+
+    mock_client = AsyncMock()
+    mock_client.server_info = AsyncMock(return_value={})
+    mock_client.close = AsyncMock()
+    mock_client.__getitem__ = MagicMock(return_value=mock_database)
+
+    with (
+        patch("src.core.documentstorage.utils.AsyncMongoClient", return_value=mock_client),
+        patch.object(MongoConnectorBuilder, "enable_sharding", new=AsyncMock()),
+    ):
+        await MongoConnectorBuilder(mongo_db="existing_db", mongo_collection="existing_col").initialize()
+
+    mock_database.create_collection.assert_not_called()
 
 
 @pytest.mark.unit
