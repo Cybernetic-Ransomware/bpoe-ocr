@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM python:3.14-slim AS builder
 
 WORKDIR /src
@@ -7,7 +8,8 @@ RUN pip install uv --break-system-packages
 COPY ./pyproject.toml ./uv.lock ./
 
 ENV UV_PYTHON_PREFERENCE=only-system
-RUN uv sync --no-cache --no-group dev
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
+    uv sync --no-group dev
 
 
 FROM python:3.14-slim AS runtime
@@ -26,9 +28,8 @@ ENV PATH="/src/.venv/bin:/usr/local/bin:$PATH"
 
 WORKDIR /src
 
-COPY --chown=appuser:appgroup ./src .
 COPY --from=builder --chown=appuser:appgroup /src/.venv /src/.venv
-RUN chmod -R +x /src/.venv/bin/
+COPY --chown=appuser:appgroup ./src .
 
 RUN mkdir /log && chown appuser:appgroup /log
 
