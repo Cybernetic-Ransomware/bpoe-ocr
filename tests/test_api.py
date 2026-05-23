@@ -110,6 +110,46 @@ async def test_process_ocr_unsupported_engine():
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize(
+    "file_name",
+    [
+        "file name.jpg",
+        "file!@#.jpg",
+        "a" * 256,
+    ],
+)
+async def test_upload_rejects_invalid_file_name(file_name: str):
+    # Path traversal cases (../, /absolute) are normalized by the HTTP layer before reaching FastAPI.
+    # Null bytes are rejected by httpx itself. Those vectors are covered via query-param tests below.
+    async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+        response = await client.post(
+            f"/api/upload/{file_name}",
+            files={"file": ("test.jpg", b"fake image data", "image/jpeg")},
+        )
+    assert response.status_code == 422
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "file_name",
+    [
+        "../etc/passwd",
+        "/absolute/path.jpg",
+        "file name.jpg",
+        "a" * 256,
+    ],
+)
+async def test_process_ocr_rejects_invalid_file_name(file_name: str):
+    async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+        response = await client.post(
+            "/api/process_ocr/",
+            params={"file_name": file_name},
+            json={"user_email": "user@example.com"},
+        )
+    assert response.status_code == 422
+
+
+@pytest.mark.unit
 async def test_process_ocr_success():
     mock_engine = MagicMock()
     mock_engine.ocr_file = MagicMock(return_value={"text": ["Hello", "World"]})

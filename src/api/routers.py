@@ -1,6 +1,7 @@
 import asyncio
+from typing import Annotated
 
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, Path, Query, UploadFile
 
 from src.api.exceptions import (
     EndpointNotAllowed,
@@ -30,8 +31,14 @@ ocr_engines = {
 }
 
 
+_FILE_NAME_PATTERN = r"^[A-Za-z0-9._-]{1,255}$"
+
+
 @router.post("/upload/{file_name}")
-async def upload_file(file_name: str, file: UploadFile = File(...)) -> dict[str, str]:
+async def upload_file(
+    file_name: str = Path(..., pattern=_FILE_NAME_PATTERN),
+    file: UploadFile = File(...),
+) -> dict[str, str]:
     """
     API Gateway uploads an image directly to S3/MiniIO.
 
@@ -52,7 +59,7 @@ def delete_file(file_name: str) -> None:
 
 
 @router.get("/download/{file_name}")
-async def download_file(file_name: str):
+async def download_file(file_name: str = Path(..., pattern=_FILE_NAME_PATTERN)):
     """
     Downloads a file from the storage. This endpoint is intended for testing purposes only.
 
@@ -66,7 +73,11 @@ async def download_file(file_name: str):
 
 
 @router.post("/process_ocr/", response_model=dict[str, list[str]])
-async def process_ocr_task(file_name: str, body: OcrRequest, ocr_engine: str = "pytesseract") -> dict[str, list[str]]:  # type: ignore[assignment]
+async def process_ocr_task(
+    file_name: Annotated[str, Query(pattern=_FILE_NAME_PATTERN)],
+    body: OcrRequest,
+    ocr_engine: str = "pytesseract",
+) -> dict[str, list[str]]:  # type: ignore[assignment]
     """
     Processes the OCR task by fetching the image from the storage, applying OCR,
     and returning the extracted text. The file is deleted from the storage after processing.
