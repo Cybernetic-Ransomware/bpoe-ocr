@@ -12,19 +12,16 @@ logger = setup_logger(__name__, "main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print(f"{DEBUG=}", flush=True)
     logger.info(f"Started with {DEBUG=}")
     with S3HealthChecker(MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY) as bucket_connector:
         if not bucket_connector.healthcheck():
-            print("No connection to Bucket!", flush=True)
-            logger.info("Started without connection to images Bucket.")
+            logger.warning("Started without connection to images Bucket.")
         else:
-            print("Healthcheck to Bucket has succeeded.", flush=True)
+            logger.info("Healthcheck to Bucket has succeeded.")
     try:
         await MongoConnectorBuilder().initialize()
-        print("MongoConnectorBuilder init checker succeeded.", flush=True)
+        logger.info("MongoConnectorBuilder init checker succeeded.")
     except Exception as e:
         logger.error(f"MongoDB initialization failed: {e}")
-        print("No connection to MongoDB!", flush=True)
-        logger.info("Started without proper initialization of document storage: MongoDB.")
+        logger.warning("Started without proper initialization of document storage: MongoDB.")
     yield
