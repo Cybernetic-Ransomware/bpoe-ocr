@@ -9,9 +9,10 @@ BASE_URL = "http://test"
 
 
 @pytest.mark.unit
-async def test_root_healthcheck():
+@pytest.mark.parametrize("path", ["/", "/healthz"])
+async def test_liveness(path: str):
     async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
-        response = await client.get("/")
+        response = await client.get(path)
     assert response.status_code == 200
     assert response.json() == {"status": "OK"}
 

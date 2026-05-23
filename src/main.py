@@ -42,6 +42,7 @@ app.include_router(api_router, prefix="/api", tags=["api"])
 
 
 @app.get("/")
-async def healthcheck():
-    logger.info("Called first healthcheck")
+@app.get("/healthz")
+async def liveness():
+    logger.info("Liveness check called")
     return {"status": "OK"}
