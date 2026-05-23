@@ -9,8 +9,9 @@ from PIL import Image
 
 from src.api.exceptions import FileBlobHasNoExtension
 from src.conf_logger import setup_logger
+from src.core.exceptions import ConnectorMethodNotAllowed
 from src.core.filestorage.abc_connector import S3ConnectorContextManager
-from src.core.filestorage.exceptions import ConnectorMethodNotAllowed, MinIOConnectorError
+from src.core.filestorage.exceptions import MinIOConnectorError
 
 logger = setup_logger(__name__, "filestorage")
 
