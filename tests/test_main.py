@@ -1,6 +1,8 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from src.main import app
+
 
 @pytest.mark.unit
 async def test_docs_endpoint():
