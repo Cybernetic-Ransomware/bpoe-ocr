@@ -1,7 +1,7 @@
 # bpoe-ocr — task runner
 # Install: scoop install just  |  winget install Casey.Just
 
-set shell := ["powershell", "-Command"]
+set shell := ["pwsh", "-Command"]
 
 # Run pre-commit on staged files, then open Commitizen
 # Stage your changes first: git add <files>
@@ -13,8 +13,7 @@ commit:
 bump:
     uv run cz bump --no-verify
     uv lock
-    git add uv.lock
-    git commit --amend --no-edit
+    $v = (uv run cz version --project); git tag -d "v$v" && git add uv.lock && git commit --amend --no-edit && git tag "v$v"
 
 # Auto-format source files
 format:
