@@ -34,7 +34,7 @@ I have chosen UV as the package manager for this particular microservice instead
 
 ## Consequences
 ### Positive Outcomes
-- Faster dependency resolution and package installation. 
+- Faster dependency resolution and package installation.
 - Opportunity to validate the benefits of a modern package manager in a controlled environment.
 - Potential reduction in build times and dependency management overhead.
 

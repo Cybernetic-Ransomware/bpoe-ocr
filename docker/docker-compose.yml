@@ -17,6 +17,8 @@ services:
     depends_on:
       minio:
         condition: service_healthy
+      minio-setup:
+        condition: service_completed_successfully
       mongo-router-1:
         condition: service_started
       mongo-setup:
@@ -33,7 +35,6 @@ services:
       - .env
     restart: unless-stopped
     ports:
-#      - '9000:9000'
       - '127.0.0.1:9001:9001'  # WebUI MinIO
     networks:
       - minionetwork
@@ -46,6 +47,20 @@ services:
       timeout: 5s
       retries: 5
       start_period: 5s
+
+  minio-setup:
+    image: minio/minio:RELEASE.2025-04-08T15-41-24Z-cpuv1
+    depends_on:
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./minio-init.sh:/scripts/minio-init.sh
+    env_file:
+      - .env
+    networks:
+      - minionetwork
+    entrypoint: ["/bin/bash", "/scripts/minio-init.sh"]
+    restart: 'no'
 
   mongo-setup:
     image: mongo:8.0.6

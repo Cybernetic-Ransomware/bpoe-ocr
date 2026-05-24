@@ -1,11 +1,15 @@
-from fastapi import APIRouter, File, UploadFile
+import asyncio
+from typing import Annotated
+
+from fastapi import APIRouter, File, Path, Query, UploadFile
 
 from src.api.exceptions import (
     EndpointNotAllowed,
-    EndpointUnexpectedException,
+    ErrorResponse,
     FileTransferInterrupted,
     UnsupportedOCREngine,
 )
+from src.api.schemas import OcrRequest
 from src.conf_logger import setup_logger
 from src.config import (
     DEBUG,
@@ -24,43 +28,50 @@ logger = setup_logger(__name__, "api")
 router = APIRouter()
 
 ocr_engines = {
-    'pytesseract': PytesseractReader(),
+    "pytesseract": PytesseractReader(),
 }
 
-@router.get("/", include_in_schema=False)
-async def healthcheck():
-    return {"status": "OK"}
 
-@router.post("/upload/{file_name}")
-async def upload_file(file_name: str, file: UploadFile | None = None) -> dict[str, str]:
+_FILE_NAME_PATTERN = r"^[A-Za-z0-9._-]{1,255}$"
+
+
+@router.post("/upload/{file_name}", status_code=201, responses={500: {"model": ErrorResponse}})
+async def upload_file(
+    file_name: str = Path(..., pattern=_FILE_NAME_PATTERN),
+    file: UploadFile = File(...),
+) -> dict[str, str]:
     """
-    API Gateway uploads an image directly to S3/MiniIO.
+    API Gateway uploads an image directly to S3/MinIO.
 
     :param file_name: str, unique file name (UUID), also used as frontend-gateway socket connection_id.
     :param file: UploadFile, binary image blob received from frontend.
     :return: dict[str, str], confirmation message.
     """
-    if file is None:
-        file = File(...)
 
-    try:
-        with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as bucket_connector:
-            success = bucket_connector.upload_file(file_obj=file.file, file_name=file_name)
-            if success:
-                return {"message": f"File '{file_name}' uploaded successfully"}
-            raise FileTransferInterrupted()
-    except Exception as e:
-        raise EndpointUnexpectedException(str(e)) from e
+    def _upload() -> bool:
+        with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as connector:
+            return connector.upload_file(file_obj=file.file, file_name=file_name)
 
-def delete_file(file_name: str) -> None:
-    try:
-        with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as bucket_connector:
-            bucket_connector.delete_file(file_name)
-    except Exception as e:
-        raise EndpointUnexpectedException(str(e)) from e
+    success = await asyncio.to_thread(_upload)
+    if success:
+        return {"message": f"File '{file_name}' uploaded successfully"}
+    raise FileTransferInterrupted()
 
-@router.get("/download/{file_name}")
-async def download_file(file_name: str):
+
+def _delete_file(file_name: str) -> None:
+    with S3ImageUploader(MINIO_WRITER_ACCESS_KEY, MINIO_WRITER_SECRET_KEY) as bucket_connector:
+        bucket_connector.delete_file(file_name)
+
+
+@router.get(
+    "/download/{file_name}",
+    responses={
+        403: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    },
+)
+async def download_file(file_name: str = Path(..., pattern=_FILE_NAME_PATTERN)):
     """
     Downloads a file from the storage. This endpoint is intended for testing purposes only.
 
@@ -69,34 +80,47 @@ async def download_file(file_name: str):
     """
     if not DEBUG:
         raise EndpointNotAllowed()
-    try:
-        with S3ImageReader(MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY) as bucket_connector:
-            return bucket_connector.download_file(file_name=file_name)
-    except Exception as e:
-        raise EndpointUnexpectedException(str(e)) from e
+
+    def _download():
+        with S3ImageReader(MINIO_READER_ACCESS_KEY, MINIO_READER_SECRET_KEY) as connector:
+            return connector.download_file(file_name=file_name)
+
+    return await asyncio.to_thread(_download)
 
 
-@router.post("/process_ocr/", response_model=dict[str, list[str]])
-async def process_ocr_task(file_name: str, user_email: str,
-                           ocr_engine: str = 'pytesseract') -> dict[str, list[str]]:  #type: ignore[assignment]
+@router.post(
+    "/process_ocr",
+    responses={
+        400: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    },
+)
+async def process_ocr_task(
+    file_name: Annotated[str, Query(pattern=_FILE_NAME_PATTERN)],
+    body: OcrRequest,
+    ocr_engine: str = "pytesseract",
+) -> dict[str, list[str]]:
     """
     Processes the OCR task by fetching the image from the storage, applying OCR,
     and returning the extracted text. The file is deleted from the storage after processing.
 
     :param file_name: str, unique file name (UUID) that exists in the bucket
+    :param body: OcrRequest, request body containing user_email
     :param ocr_engine: str, the OCR engine to use (default is PytesseractReader)
     :return: dict[str, list[str]], OCR result with the file name as the key and extracted text as the value
     """
-    try:
-        engine = ocr_engines.get(ocr_engine)
-        if not engine:
-            raise UnsupportedOCREngine(message=ocr_engine)
+    engine = ocr_engines.get(ocr_engine)
+    if not engine:
+        raise UnsupportedOCREngine(message=ocr_engine)
 
-        ocred_text = engine.ocr_file(file_name)
-        logger.info(f"OCR result: {str(ocred_text)} --- for file {file_name}")
-        with MongoConnectorRunner() as mongorunner:
-            mongorunner.upload_ocr_result(file_name, list(str(ocred_text)), user_email)
-        delete_file(file_name)
-        return {file_name: ocred_text.get("text", [])}
+    ocred_text = await asyncio.to_thread(engine.ocr_file, file_name)
+    logger.info(f"OCR result: {len(ocred_text.get('text', []))} line(s) extracted for file {file_name}")
+    logger.debug(f"OCR result full text: {str(ocred_text)} --- for file {file_name}")
+    async with MongoConnectorRunner() as mongorunner:
+        await mongorunner.upload_ocr_result(file_name, ocred_text.get("text", []), body.user_email)
+    try:
+        await asyncio.to_thread(_delete_file, file_name)
     except Exception as e:
-        raise EndpointUnexpectedException(str(e)) from e
+        logger.warning(f"Failed to delete '{file_name}' from storage after OCR: {e}")
+    return {file_name: ocred_text.get("text", [])}

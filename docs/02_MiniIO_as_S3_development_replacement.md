@@ -12,33 +12,33 @@ I have chosen MinIO as the temporary file storage solution during development in
 
 ## Rationale
 ### Ease of Substitution
-- MinIO is fully compatible with AWS S3 API, making it easy to switch between the two without modifying application logic. 
+- MinIO is fully compatible with AWS S3 API, making it easy to switch between the two without modifying application logic.
 - Using MinIO locally allows for faster iteration and debugging without requiring access to cloud infrastructure.
 
 ### Development Efficiency
-- MinIO is allowing to run a local S3-compatible storage service, reducing the need for cloud resources. 
+- MinIO is allowing to run a local S3-compatible storage service, reducing the need for cloud resources.
 - Eliminates latency associated with remote storage and allows testing in isolated environments.
 
 ### Cost Reduction
 - Running AWS S3 during development incurs unnecessary costs, whereas MinIO operates entirely on local infrastructure without additional expenses.
 
 ### Simplified Workflow
-- Developer can work without requiring AWS credentials or network access to cloud services. 
+- Developer can work without requiring AWS credentials or network access to cloud services.
 - MinIO can be easily deployed via Docker, aligning with containerized development environments.
 
 ### Future Potential
-- If MinIO proves to be efficient for local development, it may be standardized as the default local storage solution across other microservices. 
+- If MinIO proves to be efficient for local development, it may be standardized as the default local storage solution across other microservices.
 - If any limitations arise, switching back to AWS S3 remains an option without significant refactoring.
 
 
 ## Consequences
 ### Positive Outcomes
-- Faster development cycles with reduced reliance on cloud services. 
+- Faster development cycles with reduced reliance on cloud services.
 - Cost savings by avoiding AWS usage for local testing.
 - Easier debugging and isolation of storage-related issues.
 
 ### Challenges & Mitigation
-- Inconsistency Across Environments: Differences between MinIO and AWS S3 may lead to discrepancies in behavior. However, these can be mitigated through integration testing in staging environments. 
+- Inconsistency Across Environments: Differences between MinIO and AWS S3 may lead to discrepancies in behavior. However, these can be mitigated through integration testing in staging environments.
 
 
 ## Status

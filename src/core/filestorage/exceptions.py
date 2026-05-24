@@ -1,10 +1,9 @@
 from fastapi import HTTPException
 
+from src.config import DEBUG
+
 
 class MinIOConnectorError(HTTPException):
-    def __init__(self, code:int = 503, message:str = ''):
-        super().__init__(status_code=code, detail=f"Access denied: cannot connect to MiniIO, \n {message}")
-
-class ConnectorMethodNotAllowed(HTTPException):
-    def __init__(self, code:int = 503, class_name:str = ''):
-        super().__init__(status_code=code, detail=f"Method not allowed in connector class: {class_name}")
+    def __init__(self, code: int = 503, message: str = ""):
+        detail = message if (DEBUG or code < 500) else "Storage error"
+        super().__init__(status_code=code, detail=detail)

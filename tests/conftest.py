@@ -1,15 +1,22 @@
-import sys
-
 import pytest
-from dotenv import load_dotenv
-from pathlib import Path
 
-src_path = Path(__file__).parent.parent / "src"
-sys.path.insert(0, str(src_path))
+try:
+    from testcontainers.mongodb import MongoDbContainer
 
-load_dotenv(dotenv_path=Path(".") / ".env.test", override=True)
+    @pytest.fixture(scope="session")
+    def mongo_container():
+        try:
+            import docker as _docker
+            _docker.from_env().ping()
+        except Exception:
+            pytest.skip("Docker is not available — skipping integration tests")
 
-@pytest.fixture(scope="session")
-def app():
-    from src.main import app as fastapi_app
-    return fastapi_app
+        with MongoDbContainer("mongo:7.0") as container:
+            yield container
+
+    @pytest.fixture
+    def mongo_connection_url(mongo_container: MongoDbContainer) -> str:
+        return mongo_container.get_connection_url()
+
+except ImportError:
+    pass

@@ -80,15 +80,15 @@ The architecture supports scalability by allowing multiple OCR workers to proces
 ## Consequences
 ### Positive Outcomes
 
-- Separation of Concerns: The decoupling of components (frontend, API gateway, OCR worker, etc.) allows each part of the system to scale independently and be maintained separately. 
-- Real-Time User Feedback: Using WebSockets provides real-time updates, making the user experience smoother. 
-- Scalability: The system can easily scale by adding more OCR workers as needed. 
+- Separation of Concerns: The decoupling of components (frontend, API gateway, OCR worker, etc.) allows each part of the system to scale independently and be maintained separately.
+- Real-Time User Feedback: Using WebSockets provides real-time updates, making the user experience smoother.
+- Scalability: The system can easily scale by adding more OCR workers as needed.
 - Flexible Storage Options: The ability to switch between AWS S3 and MinIO for local development ensures that the architecture is adaptable to different environments.
 
 ### Challenges & Mitigation
 
-- Storage Inconsistencies: The use of local MinIO for development may introduce inconsistencies with AWS S3 in production. This can be mitigated through thorough integration testing to ensure parity between environments. 
-- OCR Accuracy: OCR accuracy may vary based on image quality and processing capacity. Continuous testing and potentially using multiple OCR engines can mitigate this. 
+- Storage Inconsistencies: The use of local MinIO for development may introduce inconsistencies with AWS S3 in production. This can be mitigated through thorough integration testing to ensure parity between environments.
+- OCR Accuracy: OCR accuracy may vary based on image quality and processing capacity. Continuous testing and potentially using multiple OCR engines can mitigate this.
 - Message Queue Overload: If the queue becomes overloaded, it could lead to delays in processing. This can be mitigated by implementing rate limiting or back-pressure handling in the RabbitMQ consumer logic.
 
 ## Status

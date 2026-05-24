@@ -1,4 +1,5 @@
 from io import BytesIO
+from pathlib import Path
 from typing import BinaryIO
 
 import botocore.exceptions
@@ -9,30 +10,35 @@ from PIL import Image
 
 from src.api.exceptions import FileBlobHasNoExtension
 from src.conf_logger import setup_logger
+from src.core.exceptions import ConnectorMethodNotAllowed
 from src.core.filestorage.abc_connector import S3ConnectorContextManager
-from src.core.filestorage.exceptions import ConnectorMethodNotAllowed, MinIOConnectorError
+from src.core.filestorage.exceptions import MinIOConnectorError
 
 logger = setup_logger(__name__, "filestorage")
+
+_IMAGE_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff"})
 
 
 class S3HealthChecker(S3ConnectorContextManager):
     def __init__(self, access_key: str, secret_key: str) -> None:
         super().__init__(access_key, secret_key)
 
-    def download_file(self, **kwargs):
-        raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
+    def download_file(self, file_name: str) -> None:
+        raise ConnectorMethodNotAllowed(message=self.__class__.__name__)
 
-    def upload_file(self, **kwargs):
-        raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
+    def upload_file(self, file_obj: BinaryIO, file_name: str) -> bool:
+        raise ConnectorMethodNotAllowed(message=self.__class__.__name__)
 
     def healthcheck(self):
         try:
             self.client.list_buckets()
             return True
-        except (botocore.exceptions.BotoCoreError,
-                botocore.exceptions.NoCredentialsError,
-                botocore.exceptions.EndpointConnectionError) as e:
-            logger.error(f"S3/MiniIO healthcheck failed: {str(e)}")
+        except (
+            botocore.exceptions.BotoCoreError,
+            botocore.exceptions.NoCredentialsError,
+            botocore.exceptions.EndpointConnectionError,
+        ) as e:
+            logger.error(f"S3/MinIO healthcheck failed: {str(e)}")
             return False
 
 
@@ -40,25 +46,28 @@ class S3ImageUploader(S3ConnectorContextManager):
     def __init__(self, access_key: str, secret_key: str):
         super().__init__(access_key, secret_key)
 
-    def download_file(self, **kwargs):
-        raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
+    def download_file(self, file_name: str) -> None:
+        raise ConnectorMethodNotAllowed(message=self.__class__.__name__)
 
     def upload_file(self, file_obj: BinaryIO, file_name: str) -> bool:
-        if "." not in file_name:
+        if Path(file_name).suffix.lower() not in _IMAGE_EXTENSIONS:
             raise FileBlobHasNoExtension()
         try:
             self.client.head_object(Bucket=self.bucket_name, Key=file_name)
-            raise MinIOConnectorError(code=409, message="File already exists in bucket")
         except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Code"] == "404":
-                try:
-                    self.client.upload_fileobj(file_obj, self.bucket_name, file_name)
-                    return True
-                except botocore.exceptions.ClientError as e:
-                    raise MinIOConnectorError(code=500, message=f"Cannot upload file: {e}") from e
+            if e.response["Error"]["Code"] != "404":
+                raise MinIOConnectorError(code=500, message=f"MinIO error: {str(e)}") from e
         except Exception as e:
             raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}") from e
-        return False
+        else:
+            raise MinIOConnectorError(code=409, message=f"File already exists in bucket: {file_name}")
+        try:
+            self.client.upload_fileobj(file_obj, self.bucket_name, file_name)
+            return True
+        except botocore.exceptions.ClientError as e:
+            raise MinIOConnectorError(code=500, message=f"Cannot upload file: {e}") from e
+        except Exception as e:
+            raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}") from e
 
     def delete_file(self, file_name: str) -> None:
         try:
@@ -79,7 +88,7 @@ class S3ImageReader(S3ConnectorContextManager):
             return StreamingResponse(
                 response["Body"],
                 media_type="application/octet-stream",
-                headers={"Content-Disposition": f'attachment; filename="{file_name}"'}
+                headers={"Content-Disposition": f'attachment; filename="{file_name}"'},
             )
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "NoSuchKey":
@@ -88,8 +97,8 @@ class S3ImageReader(S3ConnectorContextManager):
         except Exception as e:
             raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}") from e
 
-    def upload_file(self, **kwargs):
-        raise ConnectorMethodNotAllowed(class_name=self.__class__.__name__)
+    def upload_file(self, file_obj: BinaryIO, file_name: str) -> bool:
+        raise ConnectorMethodNotAllowed(message=self.__class__.__name__)
 
     def get_image_as_numpy(self, file_name: str) -> np.ndarray:
         try:
@@ -97,10 +106,10 @@ class S3ImageReader(S3ConnectorContextManager):
             image_bytes = response["Body"].read()
 
             image_array = np.asarray(bytearray(image_bytes), dtype=np.uint8)
-            image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+            image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)  # ty: ignore[unresolved-attribute]
 
             if image is None:
-                raise MinIOConnectorError(code=404, message=f"File not found: {file_name}")
+                raise MinIOConnectorError(code=422, message=f"Unable to decode image: {file_name}")
 
             return image
 
@@ -131,10 +140,8 @@ class S3ImageReader(S3ConnectorContextManager):
             if "Contents" not in response:
                 return []
 
-            image_extensions = {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff"}
             image_files = [
-                obj["Key"] for obj in response["Contents"]
-                if any(obj["Key"].lower().endswith(ext) for ext in image_extensions)
+                obj["Key"] for obj in response["Contents"] if Path(obj["Key"]).suffix.lower() in _IMAGE_EXTENSIONS
             ]
 
             return image_files
