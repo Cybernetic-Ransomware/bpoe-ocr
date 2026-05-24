@@ -1,6 +1,6 @@
 [project]
 name = "bpoe-ocr"
-version = "0.1.0"
+version = "0.1.2"
 description = "Placeholder"
 requires-python = ">=3.14"
 dependencies = [
@@ -87,7 +87,7 @@ exclude_dirs = ["tests"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.1.0"
+version = "0.1.2"
 tag_format = "v$version"
 version_files = [
     "pyproject.toml:version",

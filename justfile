@@ -7,11 +7,14 @@ set shell := ["powershell", "-Command"]
 # Stage your changes first: git add <files>
 commit:
     uv run pre-commit run
-    .venv\Scripts\cz commit
+    uv run cz commit
 
-# Bump version on release (auto-tags vX.Y.Z, updates pyproject.toml)
+# Bump version on release (auto-tags vX.Y.Z, updates pyproject.toml + uv.lock)
 bump:
-    .venv\Scripts\cz bump
+    uv run cz bump --no-verify
+    uv lock
+    git add uv.lock
+    git commit --amend --no-edit
 
 # Auto-format source files
 format:
