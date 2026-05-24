@@ -35,7 +35,6 @@ services:
       - .env
     restart: unless-stopped
     ports:
-#      - '9000:9000'
       - '127.0.0.1:9001:9001'  # WebUI MinIO
     networks:
       - minionetwork
