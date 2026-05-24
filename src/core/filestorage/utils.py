@@ -60,7 +60,7 @@ class S3ImageUploader(S3ConnectorContextManager):
         except Exception as e:
             raise MinIOConnectorError(code=500, message=f"Unexpected error: {e}") from e
         else:
-            raise MinIOConnectorError(code=409, message="File already exists in bucket")
+            raise MinIOConnectorError(code=409, message=f"File already exists in bucket: {file_name}")
         try:
             self.client.upload_fileobj(file_obj, self.bucket_name, file_name)
             return True
