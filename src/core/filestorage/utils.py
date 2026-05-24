@@ -38,7 +38,7 @@ class S3HealthChecker(S3ConnectorContextManager):
             botocore.exceptions.NoCredentialsError,
             botocore.exceptions.EndpointConnectionError,
         ) as e:
-            logger.error(f"S3/MiniIO healthcheck failed: {str(e)}")
+            logger.error(f"S3/MinIO healthcheck failed: {str(e)}")
             return False
 
 

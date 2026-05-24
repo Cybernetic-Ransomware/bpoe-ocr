@@ -41,7 +41,7 @@ async def upload_file(
     file: UploadFile = File(...),
 ) -> dict[str, str]:
     """
-    API Gateway uploads an image directly to S3/MiniIO.
+    API Gateway uploads an image directly to S3/MinIO.
 
     :param file_name: str, unique file name (UUID), also used as frontend-gateway socket connection_id.
     :param file: UploadFile, binary image blob received from frontend.
