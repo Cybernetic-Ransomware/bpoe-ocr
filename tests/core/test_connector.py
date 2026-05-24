@@ -91,7 +91,7 @@ def test_upload_file_accepts_valid_image_extension():
     mock_client.head_object.side_effect = botocore.exceptions.ClientError(
         {"Error": {"Code": "404", "Message": "Not Found"}}, "HeadObject"
     )
-    uploader.client = mock_client
+    uploader._client = mock_client
 
     result = uploader.upload_file(MagicMock(), "image.jpg")
 
@@ -105,4 +105,4 @@ def test_s3_connector_exit():
     with patch("boto3.client", return_value=mock_client), _Connector() as connector:
         pass
 
-    assert connector.client is None
+    assert connector._client is None
